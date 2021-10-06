@@ -32,118 +32,6 @@ def sinc(length):  # declares my sinc function kernel
 
     return stepf  # returns the the sinc function filter kernel
 
-def sundeclination(N):
-    declination = -math.asin(0.39779 * math.cos(0.98565 * (N + 10) + 1.914 * math.sin(0.98565 * (N - 2))))
-    return declination
-
-def greenwichmeantime():
-    date_time = time.localtime()
-    year = date_time[0]
-    month = date_time[1]
-    day = date_time[2]
-    hour = date_time[3]
-
-    return year, month, day, hour
-
-def rangecheck(value):
-    # print("starting value ", value)
-    while value < 0:
-            value = value + 360
-    while value > 360:
-            value = value - 360
-
-    # print("ending value ", value)
-    return value
-
-
-def equationoftimeAcc():
-    year, month, day, hour1 = greenwichmeantime()
-    timezone = -7
-    year = 2021
-    i = 0
-    daysMonth = {31,28,31,30,31,30,31,31,30,31,30,31}
-    months = np.arange(1, 13, 1)
-    hourscale = np.arange(1, 3, 1)
-    minutescale = {1, 2}
-
-    data = []
-
-    for month in months:
-        # numdays = daysMonth[month - 1] + 1
-        numdays = 30
-        days = range(1, numdays)
-        for day in days:
-            for hour in hourscale:
-                for minute in minutescale:
-
-                    aaa = 367 * year - 730531.5
-                    bbb = -int((7 * int(year + (month + 9)/12))/4)
-                    ccc = int(275 * month/9) + day
-                    Dtoday = (hour + minute/60 - timezone)/24
-                    Ddays = aaa + bbb + ccc + Dtoday
-                    Cycle = int(Ddays / 365.25)
-                    thetarad = 0.0172024 * (Ddays - 365.25 * Cycle)
-                    amp1 = 7.36303 - Cycle * 0.00009
-                    amp2 = 9.92465 - Cycle * 0.00014
-                    phi1 = 3.07892 - Cycle * 0.00019
-                    phi2 = -1.38995 + Cycle * 0.00013
-                    EoT1 = amp1 * np.sin(1 * (thetarad + phi1))
-                    EoT2 = amp2 * np.sin(2 * (thetarad + phi2))
-                    EoT3 = 0.31730 * np.sin(3 * (thetarad - 0.94686))
-                    EoT4 = 0.21922 * np.sin(4 * (thetarad - 0.60716))
-                    EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
-                    data.append(EoTmins)
-
-
-
-    # for month in daysMonth:
-    #     days = range(1, month+1)
-    #     for day in days:
-    #         for hour in hourscale:
-    #             x1 = (367 * year) - 738567
-    #             x2 = int(7 * int(year + (month - 9) / 12) / 4)
-    #             x3 = int(275 * month / 9) + 9
-    #             Ddays = x1 + x2 + x3 + (hour - timezone) / 24
-    #
-    #             Eo = 279.6296
-    #             Wo = 283.2989
-    #             e = 0.0167
-    #             ydays = 365.2422
-    #             no = 23.4364
-    #             nrad = np.pi / 180 * no
-    #
-    #             Mo = (360 * Ddays) / ydays + Eo - Wo
-    #             Mo = rangecheck(Mo)
-    #             Mrad = np.pi / 180 * Mo
-    #
-    #             yo = Mo + Wo
-    #             yo = rangecheck(yo)
-    #
-    #             Erad = Mrad + (e * math.sin(Mrad)) / (1 - e * math.cos(Mrad))
-    #             Vrad = 2 * math.atan(np.sqrt((1 + e) / (1 - e)) * math.tan(Erad / 2))
-    #             Vo = Vrad * 180 / np.pi
-    #
-    #             lamo = Vo + Wo
-    #             lamo = rangecheck(lamo)
-    #             lamrad = np.pi / 180 * lamo
-    #
-    #             alpharad = np.arctan2(np.sin(lamrad), np.cos(nrad))
-    #             # alpharad = np.arctan(np.sin(lamrad)*np.cos(nrad)/np.cos(lamrad))
-    #
-    #             alphao = alpharad * 180 / np.pi
-    #             alphao = rangecheck(alphao)
-    #
-    #             EoTo = yo - alphao
-    #             if EoTo < 100:
-    #                 EoTo = EoTo + 360
-    #             EoTmins = 4 * EoTo
-    #
-    #             data.append(EoTmins)
-    #             print(EoTmins)
-    #             i += 1
-
-    return data
-
 def smoothing(data, filterlength):
     if (filterlength % 2) == 1:
         sinclength = int(filterlength/2)
@@ -196,15 +84,177 @@ def smoothing(data, filterlength):
 
     return outputtotal
 
+def sundeclination(N, ans):
+    if ans == 1:
+        N = Ncalc()
+    declination = np.arcsin(np.sin(-23.44*np.pi/180) * np.cos(2*np.pi/365.24 * (N + 10) + 2*np.pi/np.pi * 0.0167 * np.sin(2*np.pi/365.24 * (N - 2))))
+    return declination, N
 
-timedata = equationoftimeAcc()
-smoothedtimedata = smoothing(timedata, 150)
+def greenwichmeantime():
+    date_time = time.localtime()
+    year = date_time[0]
+    month = date_time[1]
+    day = date_time[2]
+    hour = date_time[3]
 
-plt.plot(timedata, label="orig data")
-plt.plot(smoothedtimedata, label="smoothed data")
-plt.legend(fontsize = 20)
+    return year, month, day, hour
+
+def rangecheck(value):
+    # print("starting value ", value)
+    while value < 0:
+            value = value + 360
+    while value > 360:
+            value = value - 360
+
+    # print("ending value ", value)
+    return value
+
+
+def equationoftimeAcc(accuracy):
+    year, month, day, hour1 = greenwichmeantime()
+    timezone = -7
+    year = 2021
+    daysMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
+    months = np.arange(1, 13, 1)
+    hourscale = np.arange(1, 3, 1)
+    minutescale = [1, 2]
+
+    data = []
+
+    for month in months:
+        numdays = daysMonth[month-1]
+        days = range(1, numdays)
+        for day in days:
+            for hour in hourscale:
+                for minute in minutescale:
+
+                    aaa = 367 * year - 730531.5
+                    bbb = -int((7 * int(year + (month + 9)/12))/4)
+                    ccc = int(275 * month/9) + day
+                    Dtoday = (hour + minute/60 - timezone)/24
+                    Ddays = aaa + bbb + ccc + Dtoday
+                    Cycle = int(Ddays / 365.25)
+                    thetarad = 0.0172024 * (Ddays - 365.25 * Cycle)
+                    amp1 = 7.36303 - Cycle * 0.00009
+                    amp2 = 9.92465 - Cycle * 0.00014
+                    phi1 = 3.07892 - Cycle * 0.00019
+                    phi2 = -1.38995 + Cycle * 0.00013
+                    EoT1 = amp1 * np.sin(1 * (thetarad + phi1))
+                    EoT2 = amp2 * np.sin(2 * (thetarad + phi2))
+                    EoT3 = 0.31730 * np.sin(3 * (thetarad - 0.94686))
+                    EoT4 = 0.21922 * np.sin(4 * (thetarad - 0.60716))
+                    if accuracy == 1:
+                        EoTmins = 0.00526 + EoT1                            
+                    elif accuracy == 2:
+                        EoTmins = 0.00526 + EoT1 + EoT2
+                    elif accuracy == 3:
+                        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3
+                    elif accuracy == 4:
+                        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
+                    else:
+                        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4                        
+                            
+                    data.append(EoTmins)
+
+    return data
+
+def equationoftime(year, month, day, hour, minute, accuracy):
+    timezone = -7
+    
+    aaa = 367 * year - 730531.5
+    bbb = -int((7 * int(year + (month + 9)/12))/4)
+    ccc = int(275 * month/9) + day
+    Dtoday = (hour + minute/60 - timezone)/24
+    Ddays = aaa + bbb + ccc + Dtoday
+    Cycle = int(Ddays / 365.25)
+    thetarad = 0.0172024 * (Ddays - 365.25 * Cycle)
+    amp1 = 7.36303 - Cycle * 0.00009
+    amp2 = 9.92465 - Cycle * 0.00014
+    phi1 = 3.07892 - Cycle * 0.00019
+    phi2 = -1.38995 + Cycle * 0.00013
+    EoT1 = amp1 * np.sin(1 * (thetarad + phi1))
+    EoT2 = amp2 * np.sin(2 * (thetarad + phi2))
+    EoT3 = 0.31730 * np.sin(3 * (thetarad - 0.94686))
+    EoT4 = 0.21922 * np.sin(4 * (thetarad - 0.60716))
+    if accuracy == 1:
+        EoTmins = 0.00526 + EoT1                            
+    elif accuracy == 2:
+        EoTmins = 0.00526 + EoT1 + EoT2
+    elif accuracy == 3:
+        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3
+    elif accuracy == 4:
+        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
+    else:
+        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
+        
+    return EoTmins
+
+def Ncalc():
+    daysMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
+    days = 0
+    
+    t = time.gmtime()
+    year = t[0]
+    month = t[1]
+    day = t[2]
+    hour = t[3]
+    minute = t[4]
+    print("month is ", month)
+    
+    for i in range(month-1):
+        if year%4 != 0:
+            days = days + daysMonth[i]
+        else:
+            if i == 1:
+                days = days + daysMonth[i] + 1
+    
+    
+    return days + day - 7/24
+
+def solarzenithelevation():
+    zenith = 0
+    elevation = 0
+    psiS, N = sundeclination(0, 1)
+    declination = -23.45 * np.cos(2*np.pi/365*(N+10))
+    print("N is ", N)
+    print("sun declination is ", declination)
+    print("sun declination is ", psiS * 180/np.pi)
+    
+    return zenith, elevation
+
+
+
+num1, num2 = solarzenithelevation()
+    
+
+#timedata4 = equationoftimeAcc(4)
+#timedata3 = equationoftimeAcc(3)
+#timedata2 = equationoftimeAcc(2)
+#timedata1 = equationoftimeAcc(1)
+#
+#plt.plot(timedata4, label="orig data acc4")
+#plt.plot(timedata3, label="orig data acc3")
+#plt.plot(timedata2, label="orig data acc2")
+#plt.plot(timedata1, label="orig data acc1")
+#plt.legend(fontsize = 10)
+#plt.grid('both', 'both')
+    
+
+yearlydec = []
+
+xline = [23,-23]
+yline = [279,279]
+
+for i in range(366):
+    dec, N = sundeclination(i, 0)
+    yearlydec.append(dec*180/np.pi)
+    
+plt.plot(yearlydec, label="orig data")
+plt.plot(yline, xline, label="line")
+plt.legend(fontsize = 10)
+#plt.xlim([250, 300])
+#plt.ylim([10, -10])
 plt.grid('both', 'both')
-
 plt.show()
 
 
