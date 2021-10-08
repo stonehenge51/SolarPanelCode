@@ -134,8 +134,8 @@ def Ncalc():
     return days + day - 7/24
 
 def solarzenithelevation():
-    lambdaO = -123.12722630891494
-    psiO = 49.17491793381123
+    lambdaO = 123.12722630891494
+    psiO = -49.17491793381123
     delta, N = sundeclination(0, 1)
     Tgmt = greenwichmeantime(1)
     year, month, day, hour, minute, second = greenwichmeantime(0)
@@ -150,11 +150,12 @@ def solarzenithelevation():
     Sx = np.cos(psiS)*np.sin(lambdaS - lambdaO)
     Sy = np.cos(psiO) * np.sin(psiS) - np.sin(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
     Sz = np.sin(psiO) * np.sin(psiS) + np.cos(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
-    
+    S2 = np.sqrt(Sx*Sx + Sy*Sy + Sz*Sz)
+    print("S2 is ", S2)
     print("Sx is ", Sx, "\nSy is ", Sy, "\nSz is ", Sz)
     
     Z = np.arccos(Sz) * 180/np.pi
-    ys = np.arctan2(Sy,Sx) * 180/np.pi
+    ys = np.arctan2(Sx,Sy) * 180/np.pi
     
     print("Z is ", Z, "\nys is ", ys)
 #    print("sun declination is ", psiS * 180/np.pi)
