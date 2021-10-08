@@ -4,114 +4,44 @@ import time
 import matplotlib.pyplot as plt
 
 
-def sinc(length):  # declares my sinc function kernel
-    size = length  # number of data points
-    stepf = [0] * size  # holds the sinc function values
-    total = 0.0  # summing variable to create normalized kernel
-    odd = 0  # for adjusting the upper point if the length is even
-    fc = 0.01
-
-    if size % 2 == 0:  # if the length required is even subtract one to the upper limit
-        odd = -1  # set odd value to negative one
-
-    lower = -int(length / 2)  # defines the lower boundary of the kernel function
-    upper = int(length / 2) + odd  # defines the upper boundary of the kernel function
-
-    for i in range(lower, upper):  # this for loop calculates the the kernel values
-        if i != 0:  # this is for leaving out i = 0 since sin(0)/0 is undefined
-            stepf[i + upper] = 2*fc*(np.sin(2*fc*np.pi*i) / (2*fc*np.pi*i))  # assigns the sinc function values to to the kernel array
-            total += stepf[i + upper]  # sums the values of stepf to normalize the heights
-
-        else:  # if i = 0 use this close to zero calculation
-            num1 = 1e-15  # close to zero number
-            stepf[i + upper] = np.sin(i + num1) / num1  # approaching zero sinc function calculation
-            total += stepf[i + upper]  # sums the values of stepf to normalize the heights
-
-    for i in range(0, length):  # this for loop normalizes the kernel values
-        stepf[i] /= total  # this calculation normalizes the heights of the kernel values
-
-    return stepf  # returns the the sinc function filter kernel
-
-def smoothing(data, filterlength):
-    if (filterlength % 2) == 1:
-        sinclength = int(filterlength/2)
-        zerolength = sinclength + 1
-    else:
-        sinclength = int(filterlength / 2)
-        zerolength = sinclength
-
-    zeros = [0.0] * zerolength
-    sincfilter = sinc(sinclength) + zeros
-    fftsincfilter = np.fft.fft(sincfilter)
-
-    rows = int(len(data) / sinclength)
-    cols = filterlength
-    matrix = []
-    for i in range(rows):
-        row = []
-        for j in range(cols):
-            if j < sinclength:
-                row.append(data[i * sinclength + j])
-            else:
-                row.append(0)
-
-        fftseg = np.fft.fft(row)
-        matrix.append(fftseg)
-
-    output = []
-
-    for i in range(rows):
-        fftrow = matrix[i]
-        outputrow = []
-
-        for j in range(cols):
-            outputrow.append(fftrow[j] * fftsincfilter[j])
-
-        outseg = np.fft.ifft(outputrow)
-        output.append(outseg)
-
-    outputtotal = [0.0] * (len(data) + filterlength)
-
-    for i in range(rows):
-        row = output[i]
-
-        for j in range(cols):
-            if i == 0:
-                outputtotal[j] = row[j]
-
-            if i != 0:
-                outputtotal[i * sinclength + j] = outputtotal[i * sinclength + j] + row[j]
-
-    return outputtotal
+def rangecheck(value):
+    while value < 0:
+            value = value + 360
+    while value > 360:
+            value = value - 360
+            
+    return value
 
 def sundeclination(N, ans):
     if ans == 1:
         N = Ncalc()
     declination = np.arcsin(np.sin(-23.44*np.pi/180) * np.cos(2*np.pi/365.24 * (N + 10) + 2*np.pi/np.pi * 0.0167 * np.sin(2*np.pi/365.24 * (N - 2))))
+    
     return declination, N
 
-def greenwichmeantime():
+def greenwichmeantime(switchstate):
     date_time = time.localtime()
     year = date_time[0]
     month = date_time[1]
     day = date_time[2]
     hour = date_time[3]
-
-    return year, month, day, hour
-
-def rangecheck(value):
-    # print("starting value ", value)
-    while value < 0:
-            value = value + 360
-    while value > 360:
-            value = value - 360
-
-    # print("ending value ", value)
-    return value
-
+    minute = date_time[4]
+    second = date_time[5]
+    
+    if switchstate == 1:
+        date_time = time.gmtime()
+        year = date_time[0]
+        month = date_time[1]
+        day = date_time[2]
+        hour = date_time[3]
+        minute = date_time[4]
+        second = date_time[5]
+        return hour + minute/60 + second/(60*60)
+    else:
+        return year, month, day, hour, minute, second
 
 def equationoftimeAcc(accuracy):
-    year, month, day, hour1 = greenwichmeantime()
+    year, month, day, hour1 = greenwichmeantime(0)
     timezone = -7
     year = 2021
     daysMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
@@ -192,14 +122,7 @@ def equationoftime(year, month, day, hour, minute, accuracy):
 def Ncalc():
     daysMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
     days = 0
-    
-    t = time.gmtime()
-    year = t[0]
-    month = t[1]
-    day = t[2]
-    hour = t[3]
-    minute = t[4]
-    print("month is ", month)
+    year, month, day, hour, minute, second = greenwichmeantime(0)
     
     for i in range(month-1):
         if year%4 != 0:
@@ -208,23 +131,44 @@ def Ncalc():
             if i == 1:
                 days = days + daysMonth[i] + 1
     
-    
     return days + day - 7/24
 
 def solarzenithelevation():
+    lambdaO = -123.12722630891494
+    psiO = 49.17491793381123
+    delta, N = sundeclination(0, 1)
+    Tgmt = greenwichmeantime(1)
+    year, month, day, hour, minute, second = greenwichmeantime(0)
+    Emin = equationoftime(year, month, day, hour, minute, 4)
+    
+    
+    
+    psiS = delta
+    print("Tgmt is ",Tgmt,"\nEmin is ",Emin)
+    lambdaS = -15*(Tgmt - 12 + Emin/60)
+    print("lambdaS is ", lambdaS)
+    Sx = np.cos(psiS)*np.sin(lambdaS - lambdaO)
+    Sy = np.cos(psiO) * np.sin(psiS) - np.sin(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
+    Sz = np.sin(psiO) * np.sin(psiS) + np.cos(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
+    
+    print("Sx is ", Sx, "\nSy is ", Sy, "\nSz is ", Sz)
+    
+    Z = np.arccos(Sz) * 180/np.pi
+    ys = np.arctan2(Sy,Sx) * 180/np.pi
+    
+    print("Z is ", Z, "\nys is ", ys)
+#    print("sun declination is ", psiS * 180/np.pi)
+    
     zenith = 0
     elevation = 0
-    psiS, N = sundeclination(0, 1)
-    declination = -23.45 * np.cos(2*np.pi/365*(N+10))
-    print("N is ", N)
-    print("sun declination is ", declination)
-    print("sun declination is ", psiS * 180/np.pi)
     
     return zenith, elevation
 
 
 
 num1, num2 = solarzenithelevation()
+print("The value for Elevation is ", num1, "\nThe value for ", num2)
+
     
 
 #timedata4 = equationoftimeAcc(4)
@@ -240,21 +184,21 @@ num1, num2 = solarzenithelevation()
 #plt.grid('both', 'both')
     
 
-yearlydec = []
-
-xline = [23,-23]
-yline = [279,279]
-
-for i in range(366):
-    dec, N = sundeclination(i, 0)
-    yearlydec.append(dec*180/np.pi)
-    
-plt.plot(yearlydec, label="orig data")
-plt.plot(yline, xline, label="line")
-plt.legend(fontsize = 10)
-#plt.xlim([250, 300])
-#plt.ylim([10, -10])
-plt.grid('both', 'both')
-plt.show()
+#yearlydec = []
+#
+#xline = [23,-23]
+#yline = [279,279]
+#
+#for i in range(366):
+#    dec, N = sundeclination(i, 0)
+#    yearlydec.append(dec*180/np.pi)
+#    
+#plt.plot(yearlydec, label="orig data")
+#plt.plot(yline, xline, label="line")
+#plt.legend(fontsize = 10)
+##plt.xlim([250, 300])
+##plt.ylim([10, -10])
+#plt.grid('both', 'both')
+#plt.show()
 
 
