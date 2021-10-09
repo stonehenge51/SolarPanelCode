@@ -94,35 +94,56 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt):
     Emin = equationoftime(year, month, day, hour, minute, 4)
     
     psiS = delta
-    print("Tgmt is ",Tgmt,"\nEmin is ",Emin ,"\ndeclination is ",psiS,"\nN is ", N)
+    # print("Tgmt is ",Tgmt,"\nEmin is ",Emin ,"\ndeclination is ",psiS,"\nN is ", N)
     lambdaS = -15*(Tgmt - 12 + Emin/60) * np.pi/180
-    print("lambdaS is ", lambdaS)
+    # print("lambdaS is ", lambdaS)
     Sx = np.cos(psiS)*np.sin(lambdaS - lambdaO)
     Sy = np.cos(psiO) * np.sin(psiS) - np.sin(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
     Sz = np.sin(psiO) * np.sin(psiS) + np.cos(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
     S2 = np.sqrt(Sx*Sx + Sy*Sy + Sz*Sz)
-    print("S2 is ", S2)
-    print("Sx is ", Sx, "\nSy is ", Sy, "\nSz is ", Sz)
+    # print("S2 is ", S2)
+    # print("Sx is ", Sx, "\nSy is ", Sy, "\nSz is ", Sz)
     
-    Z = np.arcsin(Sz) * 180/np.pi
-    ys = np.arctan2(Sx,Sy) * 180/np.pi
+    Z = np.arcsin(Sz)
+    ys = np.arctan2(Sx,Sy)
     
-    print("Z is ", Z, "\nys is ", ys)
+    # print("Z is ", Z, "\nys is ", ys)
 #    print("sun declination is ", psiS * 180/np.pi)
     
-    zenith = 0
-    elevation = 0
+    zenith = Z * 180/np.pi
+    azimuth = ys * 180/np.pi
+    if azimuth < 0.0:
+        azimuth += 360
     
-    return zenith, elevation
+    return zenith, azimuth
 
 
 year, month, day, hour, minute, second = greenwichmeantime(0)
 Tgmt = greenwichmeantime(1)
 
-num1, num2 = solarzenithelevation(year, month, day, hour, minute, Tgmt)
-print("The value for Elevation is ", num1, "\nThe value for ", num2)
+elevation, azimuth = solarzenithelevation(year, month, day, hour, minute, Tgmt)
+print("The value for Elevation is ", elevation, "\nThe value for Azimuth", azimuth)
 
-    
+elevationarray = []
+azimutharray = []
+hour = np.arange(0,24)
+minute = np.arange(0,61)
+for i in hour: 
+    for j in minute:
+        Tgmt = i + j / 60 + 7
+        elevation, azimuth = solarzenithelevation(year, month, day, i, j, Tgmt)
+        elevationarray.append(elevation)
+        azimutharray.append(azimuth)
+
+
+plt.plot(azimutharray, elevationarray)
+plt.grid('both', 'both')
+plt.show()
+
+plt.plot(azimutharray)
+plt.grid('both', 'both')
+plt.show()
+
 
 #timedata4 = equationoftimeAcc(4)
 #timedata3 = equationoftimeAcc(3)
@@ -137,21 +158,21 @@ print("The value for Elevation is ", num1, "\nThe value for ", num2)
 #plt.grid('both', 'both')
     
 
-yearlydec = []
-
-xline = [23,-23]
-yline = [279,279]
-
-for i in range(366):
-   dec, N = sundeclination(i, 0, year, month, day, hour, minute)
-   yearlydec.append(dec*180/np.pi)
-
-plt.plot(yearlydec, label="orig data")
-plt.plot(yline, xline, label="line")
-plt.legend(fontsize = 10)
-#plt.xlim([250, 300])
-#plt.ylim([10, -10])
-plt.grid('both', 'both')
-plt.show()
+# yearlydec = []
+#
+# xline = [23,-23]
+# yline = [279,279]
+#
+# for i in range(366):
+#    dec, N = sundeclination(i, 0, year, month, day, hour, minute)
+#    yearlydec.append(dec*180/np.pi)
+#
+# plt.plot(yearlydec, label="orig data")
+# plt.plot(yline, xline, label="line")
+# plt.legend(fontsize = 10)
+# #plt.xlim([250, 300])
+# #plt.ylim([10, -10])
+# plt.grid('both', 'both')
+# plt.show()
 
 
