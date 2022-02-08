@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<!--Velocio Builder 1.1-->
+<!--www.Velocio.net-->
+<VelocioNetworks IPAddress="">
+  <Setup ProjectType="LadderLogic" />
+  <Connections>
+    <Connection sKey="vFactoryPage" bRemoteWritable="True" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="UI16" dataSource="register" />
+    <Connection sKey="InI16A1" iPort="0" iPin="1" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16A2" iPort="0" iPin="2" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16A3" iPort="0" iPin="3" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16A4" iPort="0" iPin="4" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16A5" iPort="0" iPin="5" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16A6" iPort="0" iPin="6" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InBitB1" iPort="1" iPin="1" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitB2" iPort="1" iPin="2" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitB3" iPort="1" iPin="3" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitB4" iPort="1" iPin="4" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitB5" iPort="1" iPin="5" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitB6" iPort="1" iPin="6" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitC1" iPort="2" iPin="1" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitC2" iPort="2" iPin="2" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitC3" iPort="2" iPin="3" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitC4" iPort="2" iPin="4" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitC5" iPort="2" iPin="5" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="InBitC6" iPort="2" iPin="6" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="input" />
+    <Connection sKey="OutBitD1" iPort="3" iPin="1" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitD2" iPort="3" iPin="2" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitD3" iPort="3" iPin="3" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitD4" iPort="3" iPin="4" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitD5" iPort="3" iPin="5" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitD6" iPort="3" iPin="6" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitE1" iPort="4" iPin="1" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitE2" iPort="4" iPin="2" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitE3" iPort="4" iPin="3" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitE4" iPort="4" iPin="4" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitE5" iPort="4" iPin="5" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="OutBitE6" iPort="4" iPin="6" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="Bit" dataSource="output" />
+    <Connection sKey="InI16F1" iPort="5" iPin="1" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16F2" iPort="5" iPin="2" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16F3" iPort="5" iPin="3" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16F4" iPort="5" iPin="4" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16F5" iPort="5" iPin="5" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+    <Connection sKey="InI16F6" iPort="5" iPin="6" ui32Mask="0" ui32MessageId="0" ui32Period="0" dataType="I16" dataSource="input" />
+  </Connections>
+  <Modbus />
+  <SubroutineInputs cellsHeigh="0" />
+  <Cells>
+    <coilOut rung="1" row="1" column="4" cellsHeigh="-1" iSortedIndex="0">
+      <eAddress1 sAddress="OutBitE1" sIndex="" dtAddress="Bit" />
+    </coilOut>
+    <blankHorizontal rung="1" row="1" column="1" cellsHeigh="-1" iSortedIndex="-1" />
+    <blankHorizontal rung="1" row="1" column="2" cellsHeigh="-1" iSortedIndex="-1" />
+    <coilOut rung="2" row="1" column="4" cellsHeigh="-1" iSortedIndex="1">
+      <eAddress1 sAddress="OutBitE2" sIndex="" dtAddress="Bit" />
+    </coilOut>
+    <blankHorizontal rung="2" row="1" column="1" cellsHeigh="-1" iSortedIndex="-1" />
+    <NO rung="2" row="1" column="2" cellsHeigh="-1" iSortedIndex="-1">
+      <eAddress1 sAddress="InBitC1" sIndex="" dtAddress="Bit" />
+    </NO>
+    <blankHorizontal rung="2" row="1" column="3" cellsHeigh="-1" iSortedIndex="-1" />
+    <coilOut rung="3" row="1" column="4" cellsHeigh="-1" iSortedIndex="2">
+      <eAddress1 sAddress="OutBitD2" sIndex="" dtAddress="Bit" />
+    </coilOut>
+    <blankHorizontal rung="3" row="1" column="1" cellsHeigh="-1" iSortedIndex="-1" />
+    <NO rung="3" row="1" column="2" cellsHeigh="-1" iSortedIndex="-1">
+      <eAddress1 sAddress="OutBitE2" sIndex="" dtAddress="Bit" />
+    </NO>
+    <blankHorizontal rung="3" row="1" column="3" cellsHeigh="-1" iSortedIndex="-1" />
+    <blankHorizontal rung="1" row="1" column="3" cellsHeigh="-1" iSortedIndex="-1" />
+    <noop rung="4" row="1" column="4" cellsHeigh="-1" iSortedIndex="-1" />
+    <blankHorizontal rung="4" row="1" column="1" cellsHeigh="-1" iSortedIndex="-1" />
+    <blankHorizontal rung="4" row="1" column="2" cellsHeigh="-1" iSortedIndex="-1" />
+    <blankHorizontal rung="4" row="1" column="3" cellsHeigh="-1" iSortedIndex="-1" />
+  </Cells>
+  <Wires />
+  <Comments>
+    <Comment Index="0" bComment="False" sComment="" />
+    <Comment Index="1" bComment="False" sComment="" />
+    <Comment Index="2" bComment="False" sComment="" />
+    <Comment Index="3" bComment="False" sComment="" />
+  </Comments>
+</VelocioNetworks>

@@ -94,21 +94,13 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt):
     Emin = equationoftime(year, month, day, hour, minute, 4)
     
     psiS = delta
-    # print("Tgmt is ",Tgmt,"\nEmin is ",Emin ,"\ndeclination is ",psiS,"\nN is ", N)
     lambdaS = -15*(Tgmt - 12 + Emin/60) * np.pi/180
-    # print("lambdaS is ", lambdaS)
     Sx = np.cos(psiS)*np.sin(lambdaS - lambdaO)
     Sy = np.cos(psiO) * np.sin(psiS) - np.sin(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
     Sz = np.sin(psiO) * np.sin(psiS) + np.cos(psiO) * np.cos(psiS) * np.cos(lambdaS - lambdaO)
-    S2 = np.sqrt(Sx*Sx + Sy*Sy + Sz*Sz)
-    # print("S2 is ", S2)
-    # print("Sx is ", Sx, "\nSy is ", Sy, "\nSz is ", Sz)
     
     Z = np.arcsin(Sz)
     ys = np.arctan2(Sx,Sy)
-    
-    # print("Z is ", Z, "\nys is ", ys)
-#    print("sun declination is ", psiS * 180/np.pi)
     
     zenith = Z * 180/np.pi
     azimuth = ys * 180/np.pi
@@ -126,36 +118,56 @@ print("The value for Elevation is ", elevation, "\nThe value for Azimuth", azimu
 
 elevationarray = []
 azimutharray = []
-hour = np.arange(0,24)
-minute = np.arange(0,61)
-for i in hour: 
-    for j in minute:
-        Tgmt = i + j / 60 + 7
-        elevation, azimuth = solarzenithelevation(year, month, day, i, j, Tgmt)
-        elevationarray.append(elevation)
-        azimutharray.append(azimuth)
+print(hour)
+months = np.arange(0,12)
+days = [31, 28, 31, 30, 31, 30, 31, 30, 31, 30, 31, 30]
+hours = np.arange(0,24)
+minutes = np.arange(0,61)
+for month in months:
+    daysOfmonth = np.arange(1, days[month]+1)
+    # for day in daysOfmonth:
+    for hour in hours:
+        for minute in minutes:
+            Tgmt = hour + minute / 60 + 7
+            elevation, azimuth = solarzenithelevation(year, (month+1), day, hour, minute, Tgmt)
+            elevationarray.append(elevation)
+            azimutharray.append(azimuth)
 
 
 plt.plot(azimutharray, elevationarray)
+plt.title("Suns path through the sky")
+plt.xlabel("Azimuthal angle")
+plt.ylabel("Elevation angle")
 plt.grid('both', 'both')
 plt.show()
 
-plt.plot(azimutharray)
-plt.grid('both', 'both')
-plt.show()
+# plt.plot(azimutharray)
+# plt.grid('both', 'both')
+# plt.show()
 
-
-#timedata4 = equationoftimeAcc(4)
-#timedata3 = equationoftimeAcc(3)
-#timedata2 = equationoftimeAcc(2)
-#timedata1 = equationoftimeAcc(1)
+# year, month, day, hour, minute, second = greenwichmeantime(0)
+# timedata4 = []
+# month = np.arange(0,12)
+# day = np.arange(0,30)
+# for y in month:
+#     for d in day:
+#         timedata4.append(equationoftime(year, y, d, hour, minute, 4))
 #
-#plt.plot(timedata4, label="orig data acc4")
-#plt.plot(timedata3, label="orig data acc3")
-#plt.plot(timedata2, label="orig data acc2")
-#plt.plot(timedata1, label="orig data acc1")
-#plt.legend(fontsize = 10)
-#plt.grid('both', 'both')
+#
+# # timedata3 = equationoftimeAcc(3)
+# # timedata2 = equationoftimeAcc(2)
+# # timedata1 = equationoftimeAcc(1)
+#
+# plt.plot(timedata4, label="orig data acc4")
+# # plt.plot(timedata3, label="orig data acc3")
+# # plt.plot(timedata2, label="orig data acc2")
+# # plt.plot(timedata1, label="orig data acc1")
+# # plt.legend(fontsize = 10)
+# plt.title("Equation of time")
+# plt.xlabel("day of the year")
+# plt.ylabel("time difference (s)")
+# plt.grid('both', 'both')
+# plt.show()
     
 
 # yearlydec = []
@@ -166,10 +178,13 @@ plt.show()
 # for i in range(366):
 #    dec, N = sundeclination(i, 0, year, month, day, hour, minute)
 #    yearlydec.append(dec*180/np.pi)
-#
-# plt.plot(yearlydec, label="orig data")
-# plt.plot(yline, xline, label="line")
+
+# plt.plot(yearlydec, label="Solar Declination")
+# # plt.plot(yline, xline, label="line")
 # plt.legend(fontsize = 10)
+# plt.title("Equation of time")
+# plt.xlabel("day of the year")
+# plt.ylabel("time difference (s)")
 # #plt.xlim([250, 300])
 # #plt.ylim([10, -10])
 # plt.grid('both', 'both')
