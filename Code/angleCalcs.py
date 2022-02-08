@@ -76,7 +76,6 @@ def equationoftime(year, month, day, hour, minute, accuracy):
 def Ncalc(year, month, day, hour, minute):
     daysMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
     days = 0
-
     
     for i in range(month-1):
         if year%4 != 0:
@@ -87,11 +86,11 @@ def Ncalc(year, month, day, hour, minute):
     
     return days + day + hour/24 + minute/1440
 
-def solarzenithelevation(year, month, day, hour, minute, Tgmt):
+def solarzenithelevation(year, month, day, hour, minute, Tgmt, acc):
     lambdaO = -123.12722630891494 * np.pi/180
     psiO = 49.17491793381123 * np.pi/180
     delta, N = sundeclination(0, 1, year, month, day, hour+7, minute)
-    Emin = equationoftime(year, month, day, hour, minute, 4)
+    Emin = equationoftime(year, month, day, hour, minute, acc)
     
     psiS = delta
     lambdaS = -15*(Tgmt - 12 + Emin/60) * np.pi/180
@@ -101,7 +100,7 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt):
     
     Z = np.arcsin(Sz)
     ys = np.arctan2(Sx,Sy)
-    
+
     zenith = Z * 180/np.pi
     azimuth = ys * 180/np.pi
     if azimuth < 0.0:
@@ -113,8 +112,23 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt):
 year, month, day, hour, minute, second = greenwichmeantime(0)
 Tgmt = greenwichmeantime(1)
 
-elevation, azimuth = solarzenithelevation(year, month, day, hour, minute, Tgmt)
+elevation, azimuth = solarzenithelevation(year, month, day, hour, minute, Tgmt, 2)
 print("The value for Elevation is ", elevation, "\nThe value for Azimuth", azimuth)
+def graphingcalc(year, month, day, Tgmt, acc):
+    elevationarray = []
+    azimutharray = []
+    hour = np.arange(0,24)
+    minute = np.arange(0,61)
+    for i in hour: 
+        for j in minute:
+            Tgmt = i + j / 60 + 7
+            elevation, azimuth = solarzenithelevation(year, month, day, i, j, Tgmt, acc)
+            elevationarray.append(elevation)
+            azimutharray.append(azimuth)
+    
+    return elevationarray, azimutharray
+
+
 
 elevationarray = []
 azimutharray = []
@@ -132,6 +146,14 @@ for month in months:
             elevation, azimuth = solarzenithelevation(year, (month+1), day, hour, minute, Tgmt)
             elevationarray.append(elevation)
             azimutharray.append(azimuth)
+
+elevationarray1, azimutharray1 = graphingcalc(year, month, day, Tgmt, 1)
+elevationarray2, azimutharray2 = graphingcalc(year, month, day, Tgmt, 2)
+elevationarray3, azimutharray3 = graphingcalc(year, month, day, Tgmt, 3)
+elevationarray4, azimutharray4 = graphingcalc(year, month, day, Tgmt, 4)
+
+
+error = 0.0
 
 
 plt.plot(azimutharray, elevationarray)
@@ -189,5 +211,32 @@ plt.show()
 # #plt.ylim([10, -10])
 # plt.grid('both', 'both')
 # plt.show()
+
+
+for i in range(len(azimutharray2)):
+    error += (azimutharray2[i] - azimutharray4[i])**2
+
+print("Error is ", error)
+plt.figure()
+plt.plot(azimutharray1, label = "acc = 1")
+plt.plot(azimutharray2, label = "acc = 2")
+plt.plot(azimutharray3, label = "acc = 3")
+plt.plot(azimutharray4, label = "acc = 4")
+plt.xlabel("Time (min)")
+plt.ylabel("Azimuthal")
+plt.legend()
+plt.grid('both', 'both')
+plt.show()
+
+plt.figure()
+plt.plot(azimutharray4, elevationarray4)
+plt.xlabel("Azimuthal")
+plt.ylabel("Elevation")
+plt.grid('both', 'both')
+plt.show()
+
+#plt.plot(azimutharray)
+#plt.grid('both', 'both')
+#plt.show()
 
 
