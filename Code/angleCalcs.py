@@ -134,22 +134,22 @@ elevationarray2, azimutharray2 = graphingcalc(year, month, day, Tgmt, 2)
 elevationarray3, azimutharray3 = graphingcalc(year, month, day, Tgmt, 3)
 elevationarray4, azimutharray4 = graphingcalc(year, month, day, Tgmt, 4)
 
-error = 0.0
-
-for i in range(len(azimutharray2)):
-    error += (azimutharray2[i] - azimutharray4[i])**2
-
-print("Error is ", error)
-plt.figure()
-plt.plot(azimutharray1, label = "acc = 1")
-plt.plot(azimutharray2, label = "acc = 2")
-plt.plot(azimutharray3, label = "acc = 3")
-plt.plot(azimutharray4, label = "acc = 4")
-plt.xlabel("Time (min)")
-plt.ylabel("Azimuthal")
-plt.legend()
-plt.grid('both', 'both')
-plt.show()
+#error = 0.0
+#
+#for i in range(len(azimutharray2)):
+#    error += (azimutharray2[i] - azimutharray4[i])**2
+#
+#print("Error is ", error)
+#plt.figure()
+#plt.plot(azimutharray1, label = "acc = 1")
+#plt.plot(azimutharray2, label = "acc = 2")
+#plt.plot(azimutharray3, label = "acc = 3")
+#plt.plot(azimutharray4, label = "acc = 4")
+#plt.xlabel("Time (min)")
+#plt.ylabel("Azimuthal")
+#plt.legend()
+#plt.grid('both', 'both')
+#plt.show()
 
 plt.figure()
 plt.plot(azimutharray4, elevationarray4)
