@@ -100,7 +100,7 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt, acc):
     
     Z = np.arcsin(Sz)
     ys = np.arctan2(Sx,Sy)
-        
+
     zenith = Z * 180/np.pi
     azimuth = ys * 180/np.pi
     if azimuth < 0.0:
@@ -129,10 +129,29 @@ def graphingcalc(year, month, day, Tgmt, acc):
     return elevationarray, azimutharray
 
 
+
+elevationarray = []
+azimutharray = []
+print(hour)
+months = np.arange(0,12)
+days = [31, 28, 31, 30, 31, 30, 31, 30, 31, 30, 31, 30]
+hours = np.arange(0,24)
+minutes = np.arange(0,61)
+for month in months:
+    daysOfmonth = np.arange(1, days[month]+1)
+    # for day in daysOfmonth:
+    for hour in hours:
+        for minute in minutes:
+            Tgmt = hour + minute / 60 + 7
+            elevation, azimuth = solarzenithelevation(year, (month+1), day, hour, minute, Tgmt)
+            elevationarray.append(elevation)
+            azimutharray.append(azimuth)
+
 elevationarray1, azimutharray1 = graphingcalc(year, month, day, Tgmt, 1)
 elevationarray2, azimutharray2 = graphingcalc(year, month, day, Tgmt, 2)
 elevationarray3, azimutharray3 = graphingcalc(year, month, day, Tgmt, 3)
 elevationarray4, azimutharray4 = graphingcalc(year, month, day, Tgmt, 4)
+
 
 #error = 0.0
 #
@@ -151,6 +170,83 @@ elevationarray4, azimutharray4 = graphingcalc(year, month, day, Tgmt, 4)
 #plt.grid('both', 'both')
 #plt.show()
 
+
+error = 0.0
+
+
+plt.plot(azimutharray, elevationarray)
+plt.title("Suns path through the sky")
+plt.xlabel("Azimuthal angle")
+plt.ylabel("Elevation angle")
+plt.grid('both', 'both')
+plt.show()
+
+# plt.plot(azimutharray)
+# plt.grid('both', 'both')
+# plt.show()
+
+# year, month, day, hour, minute, second = greenwichmeantime(0)
+# timedata4 = []
+# month = np.arange(0,12)
+# day = np.arange(0,30)
+# for y in month:
+#     for d in day:
+#         timedata4.append(equationoftime(year, y, d, hour, minute, 4))
+#
+#
+# # timedata3 = equationoftimeAcc(3)
+# # timedata2 = equationoftimeAcc(2)
+# # timedata1 = equationoftimeAcc(1)
+#
+# plt.plot(timedata4, label="orig data acc4")
+# # plt.plot(timedata3, label="orig data acc3")
+# # plt.plot(timedata2, label="orig data acc2")
+# # plt.plot(timedata1, label="orig data acc1")
+# # plt.legend(fontsize = 10)
+# plt.title("Equation of time")
+# plt.xlabel("day of the year")
+# plt.ylabel("time difference (s)")
+# plt.grid('both', 'both')
+# plt.show()
+    
+
+# yearlydec = []
+#
+# xline = [23,-23]
+# yline = [279,279]
+#
+# for i in range(366):
+#    dec, N = sundeclination(i, 0, year, month, day, hour, minute)
+#    yearlydec.append(dec*180/np.pi)
+
+# plt.plot(yearlydec, label="Solar Declination")
+# # plt.plot(yline, xline, label="line")
+# plt.legend(fontsize = 10)
+# plt.title("Equation of time")
+# plt.xlabel("day of the year")
+# plt.ylabel("time difference (s)")
+# #plt.xlim([250, 300])
+# #plt.ylim([10, -10])
+# plt.grid('both', 'both')
+# plt.show()
+
+
+for i in range(len(azimutharray2)):
+    error += (azimutharray2[i] - azimutharray4[i])**2
+
+print("Error is ", error)
+plt.figure()
+plt.plot(azimutharray1, label = "acc = 1")
+plt.plot(azimutharray2, label = "acc = 2")
+plt.plot(azimutharray3, label = "acc = 3")
+plt.plot(azimutharray4, label = "acc = 4")
+plt.xlabel("Time (min)")
+plt.ylabel("Azimuthal")
+plt.legend()
+plt.grid('both', 'both')
+plt.show()
+
+
 plt.figure()
 plt.plot(azimutharray4, elevationarray4)
 plt.xlabel("Azimuthal")
@@ -161,4 +257,5 @@ plt.show()
 #plt.plot(azimutharray)
 #plt.grid('both', 'both')
 #plt.show()
+
 
