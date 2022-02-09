@@ -71,6 +71,11 @@
     <coilSet rung="0" row="9" column="14" cellsHeigh="-1" iSortedIndex="3">
       <eAddress1 sAddress="Motor1_pulse" sIndex="" dtAddress="Bit" />
     </coilSet>
+    <PWM rung="0" row="6" column="10" cellsHeigh="-1" iSortedIndex="-1" myPWMType="Start" iDevice="0">
+      <eOutput sAddress="Motor1_pulse" sIndex="" dtAddress="Bit" />
+      <eOnTime sAddress="5" sIndex="" dtAddress="UI16" />
+      <bContinuous value="True" />
+    </PWM>
   </Cells>
   <FlowConnections>
     <FlowConn From="0" Yes="1" dirYesFrom="down" dirYesTo="up" />
