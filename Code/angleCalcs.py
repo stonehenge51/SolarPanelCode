@@ -11,15 +11,11 @@ def rangecheck(value):
             
     return value
 
-def sundeclination(B, ans, year, month, day, hour, minute):
-    if ans == 1:
-        N = Ncalc(year, month, day, hour, minute)
-        declination = np.arcsin(np.sin(-23.44 * np.pi / 180) * np.cos(2 * np.pi / 365.24 * (N + 10) + 2 * np.pi / np.pi * 0.0167 * np.sin(2 * np.pi / 365.24 * (N - 2))))
-    else:
-        N = B
-        declination = np.arcsin(np.sin(-23.44 * np.pi / 180) * np.cos(2 * np.pi / 365.24 * (N + 10) + 2 * np.pi / np.pi * 0.0167 * np.sin(2 * np.pi / 365.24 * (N - 2))))
+def sundeclination(year, month, day, hour, minute):
+    N = Ncalc(year, month, day, hour, minute)
+    declination = np.arcsin(np.sin(-23.44 * np.pi / 180) * np.cos(2 * np.pi / 365.24 * (N + 10) + 2 * np.pi / np.pi * 0.0167 * np.sin(2 * np.pi / 365.24 * (N - 2))))
 
-    return declination, N
+    return declination
 
 def greenwichmeantime(switchstate):
     date_time = time.localtime()
@@ -29,12 +25,9 @@ def greenwichmeantime(switchstate):
     hour = date_time[3]
     minute = date_time[4]
     second = date_time[5]
-    
+
     if switchstate == 1:
         date_time = time.gmtime()
-        year = date_time[0]
-        month = date_time[1]
-        day = date_time[2]
         hour = date_time[3]
         minute = date_time[4]
         second = date_time[5]
@@ -42,7 +35,7 @@ def greenwichmeantime(switchstate):
     else:
         return year, month, day, hour, minute, second
 
-def equationoftime(year, month, day, hour, minute, accuracy):
+def equationoftime(year, month, day, hour, minute):
     timezone = -7
     
     aaa = 367 * year - 730531.5
@@ -60,17 +53,8 @@ def equationoftime(year, month, day, hour, minute, accuracy):
     EoT2 = amp2 * np.sin(2 * (thetarad + phi2))
     EoT3 = 0.31730 * np.sin(3 * (thetarad - 0.94686))
     EoT4 = 0.21922 * np.sin(4 * (thetarad - 0.60716))
-    if accuracy == 1:
-        EoTmins = 0.00526 + EoT1                            
-    elif accuracy == 2:
-        EoTmins = 0.00526 + EoT1 + EoT2
-    elif accuracy == 3:
-        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3
-    elif accuracy == 4:
-        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
-    else:
-        EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
-        
+    EoTmins = 0.00526 + EoT1 + EoT2 + EoT3 + EoT4
+
     return EoTmins
 
 def Ncalc(year, month, day, hour, minute):
@@ -86,11 +70,11 @@ def Ncalc(year, month, day, hour, minute):
     
     return days + day + hour/24 + minute/1440
 
-def solarzenithelevation(year, month, day, hour, minute, Tgmt, acc):
+def solarzenithelevation(year, month, day, hour, minute, Tgmt):
     lambdaO = -123.12722630891494 * np.pi/180
     psiO = 49.17491793381123 * np.pi/180
-    delta, N = sundeclination(0, 1, year, month, day, hour+7, minute)
-    Emin = equationoftime(year, month, day, hour, minute, acc)
+    delta = sundeclination(year, month, day, hour+7, minute)
+    Emin = equationoftime(year, month, day, hour, minute)
     
     psiS = delta
     lambdaS = -15*(Tgmt - 12 + Emin/60) * np.pi/180
@@ -110,152 +94,9 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt, acc):
 
 
 year, month, day, hour, minute, second = greenwichmeantime(0)
+print(year," ", month," ", day," ", hour," ", minute," ", second)
 Tgmt = greenwichmeantime(1)
 
-elevation, azimuth = solarzenithelevation(year, month, day, hour, minute, Tgmt, 2)
+elevation, azimuth = solarzenithelevation(year, month, day, hour, minute, Tgmt)
 print("The value for Elevation is ", elevation, "\nThe value for Azimuth", azimuth)
-def graphingcalc(year, month, day, Tgmt, acc):
-    elevationarray = []
-    azimutharray = []
-    hour = np.arange(0,24)
-    minute = np.arange(0,61)
-    for i in hour: 
-        for j in minute:
-            Tgmt = i + j / 60 + 7
-            elevation, azimuth = solarzenithelevation(year, month, day, i, j, Tgmt, acc)
-            elevationarray.append(elevation)
-            azimutharray.append(azimuth)
-    
-    return elevationarray, azimutharray
-
-
-
-elevationarray = []
-azimutharray = []
-print(hour)
-months = np.arange(0,12)
-days = [31, 28, 31, 30, 31, 30, 31, 30, 31, 30, 31, 30]
-hours = np.arange(0,24)
-minutes = np.arange(0,61)
-for month in months:
-    daysOfmonth = np.arange(1, days[month]+1)
-    # for day in daysOfmonth:
-    for hour in hours:
-        for minute in minutes:
-            Tgmt = hour + minute / 60 + 7
-            elevation, azimuth = solarzenithelevation(year, (month+1), day, hour, minute, Tgmt)
-            elevationarray.append(elevation)
-            azimutharray.append(azimuth)
-
-elevationarray1, azimutharray1 = graphingcalc(year, month, day, Tgmt, 1)
-elevationarray2, azimutharray2 = graphingcalc(year, month, day, Tgmt, 2)
-elevationarray3, azimutharray3 = graphingcalc(year, month, day, Tgmt, 3)
-elevationarray4, azimutharray4 = graphingcalc(year, month, day, Tgmt, 4)
-
-
-#error = 0.0
-#
-#for i in range(len(azimutharray2)):
-#    error += (azimutharray2[i] - azimutharray4[i])**2
-#
-#print("Error is ", error)
-#plt.figure()
-#plt.plot(azimutharray1, label = "acc = 1")
-#plt.plot(azimutharray2, label = "acc = 2")
-#plt.plot(azimutharray3, label = "acc = 3")
-#plt.plot(azimutharray4, label = "acc = 4")
-#plt.xlabel("Time (min)")
-#plt.ylabel("Azimuthal")
-#plt.legend()
-#plt.grid('both', 'both')
-#plt.show()
-
-
-error = 0.0
-
-
-plt.plot(azimutharray, elevationarray)
-plt.title("Suns path through the sky")
-plt.xlabel("Azimuthal angle")
-plt.ylabel("Elevation angle")
-plt.grid('both', 'both')
-plt.show()
-
-# plt.plot(azimutharray)
-# plt.grid('both', 'both')
-# plt.show()
-
-# year, month, day, hour, minute, second = greenwichmeantime(0)
-# timedata4 = []
-# month = np.arange(0,12)
-# day = np.arange(0,30)
-# for y in month:
-#     for d in day:
-#         timedata4.append(equationoftime(year, y, d, hour, minute, 4))
-#
-#
-# # timedata3 = equationoftimeAcc(3)
-# # timedata2 = equationoftimeAcc(2)
-# # timedata1 = equationoftimeAcc(1)
-#
-# plt.plot(timedata4, label="orig data acc4")
-# # plt.plot(timedata3, label="orig data acc3")
-# # plt.plot(timedata2, label="orig data acc2")
-# # plt.plot(timedata1, label="orig data acc1")
-# # plt.legend(fontsize = 10)
-# plt.title("Equation of time")
-# plt.xlabel("day of the year")
-# plt.ylabel("time difference (s)")
-# plt.grid('both', 'both')
-# plt.show()
-    
-
-# yearlydec = []
-#
-# xline = [23,-23]
-# yline = [279,279]
-#
-# for i in range(366):
-#    dec, N = sundeclination(i, 0, year, month, day, hour, minute)
-#    yearlydec.append(dec*180/np.pi)
-
-# plt.plot(yearlydec, label="Solar Declination")
-# # plt.plot(yline, xline, label="line")
-# plt.legend(fontsize = 10)
-# plt.title("Equation of time")
-# plt.xlabel("day of the year")
-# plt.ylabel("time difference (s)")
-# #plt.xlim([250, 300])
-# #plt.ylim([10, -10])
-# plt.grid('both', 'both')
-# plt.show()
-
-
-for i in range(len(azimutharray2)):
-    error += (azimutharray2[i] - azimutharray4[i])**2
-
-print("Error is ", error)
-plt.figure()
-plt.plot(azimutharray1, label = "acc = 1")
-plt.plot(azimutharray2, label = "acc = 2")
-plt.plot(azimutharray3, label = "acc = 3")
-plt.plot(azimutharray4, label = "acc = 4")
-plt.xlabel("Time (min)")
-plt.ylabel("Azimuthal")
-plt.legend()
-plt.grid('both', 'both')
-plt.show()
-
-
-plt.figure()
-plt.plot(azimutharray4, elevationarray4)
-plt.xlabel("Azimuthal")
-plt.ylabel("Elevation")
-plt.grid('both', 'both')
-plt.show()
-
-#plt.plot(azimutharray)
-#plt.grid('both', 'both')
-#plt.show()
-
 
