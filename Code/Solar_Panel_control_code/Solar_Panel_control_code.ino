@@ -1,46 +1,80 @@
 #define direction_signal_M1 2
 #define pulse_signal_M1 3
-#define on_signal_M1 4
 
 #define direction_signal_M2 5
-#define pulse_signal_M2 6
-#define on_signal_M2 7
+#define pulse_signal_M2 4
 
-#define len 1
+#define M1_right 6
+#define M1_left 8
+
+#define M2_up 9
+#define M2_down 7
+
+#define len 100
 
 double elevation = 0.0;
 double azimuth = 0.0;
 int timedata [] = {0,0,0,0,0,0};
 
-int val = 0; 
+int right = 0;
+int left = 0;
+
+int up = 0;
+int down = 0;
 
 void setup() {
   
   pinMode(direction_signal_M1, OUTPUT);
   pinMode(pulse_signal_M1, OUTPUT);
-  pinMode(on_signal_M1, INPUT);
-
   pinMode(direction_signal_M2, OUTPUT);
   pinMode(pulse_signal_M2, OUTPUT);
-  pinMode(on_signal_M2, INPUT);
+
+  pinMode(M1_left, INPUT_PULLUP);
+  pinMode(M1_right, INPUT_PULLUP);
+  pinMode(M2_up, INPUT_PULLUP);
+  pinMode(M2_down , INPUT_PULLUP);
 
 }
 
 void loop() {
   
-  val = digitalRead(on_signal_M1);
-  if(val == HIGH){
+  right = digitalRead(M1_right);
+  left = digitalRead(M1_left);
+  up = digitalRead(M2_up);
+  down = digitalRead(M2_down);
+
+  if(right == LOW){
     digitalWrite(direction_signal_M1, HIGH);
-    delay(1);
-    digitalWrite(pulse_signal_M1, HIGH);
-    delay(len);
-    digitalWrite(pulse_signal_M1, LOW);
-    delay(len);  
+    pulse(pulse_signal_M1);        
   }
-  if(val == HIGH){
+  else{
     digitalWrite(direction_signal_M1, LOW);
   }
+  if(left == LOW){
+    digitalWrite(direction_signal_M1, LOW);
+    pulse(pulse_signal_M1);
+  }
+
+  if(up == LOW){
+    digitalWrite(direction_signal_M2, HIGH);
+    pulse(pulse_signal_M2);        
+  }
+  else{
+    digitalWrite(direction_signal_M2, LOW);
+  }
+  if(down == LOW){
+    digitalWrite(direction_signal_M2, LOW);
+    pulse(pulse_signal_M2);
+  }
   
+}
+
+void pulse(int pin){
+  digitalWrite(pin, LOW);
+  delay(len);
+  digitalWrite(pin, HIGH);
+  delay(len);
+  digitalWrite(pin, LOW);
 }
 
 void solarzenithelevation(double year, double month, double day, double hour, double minute, double Tgmt){
