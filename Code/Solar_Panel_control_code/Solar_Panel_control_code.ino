@@ -10,7 +10,7 @@
 #define M2_up 9
 #define M2_down 7
 
-#define len 100
+#define len 25
 
 double elevation = 0.0;
 double azimuth = 0.0;
@@ -21,6 +21,8 @@ int left = 0;
 
 int up = 0;
 int down = 0;
+
+int counter = 0;
 
 void setup() {
   
@@ -44,27 +46,47 @@ void loop() {
   down = digitalRead(M2_down);
 
   if(right == LOW){
-    digitalWrite(direction_signal_M1, HIGH);
+    if(counter == 0){
+      counter = 1;
+      setdirection(0,1);
+    }
     pulse(pulse_signal_M1);        
   }
   else{
-    digitalWrite(direction_signal_M1, LOW);
+    counter = 0;
+    setdirection(0,0);
   }
   if(left == LOW){
-    digitalWrite(direction_signal_M1, LOW);
+    if(counter == 0){
+      counter = 1;
+      setdirection(0,0);
+    }
     pulse(pulse_signal_M1);
+  }
+  else{
+    counter = 0;
   }
 
   if(up == LOW){
-    digitalWrite(direction_signal_M2, HIGH);
+    if(counter == 0){
+      counter = 1;
+      setdirection(1,1);
+    }
     pulse(pulse_signal_M2);        
   }
   else{
-    digitalWrite(direction_signal_M2, LOW);
+    counter = 0;
+    setdirection(1,0);
   }
   if(down == LOW){
-    digitalWrite(direction_signal_M2, LOW);
+    if(counter == 0){
+      counter = 1;
+      setdirection(1,0);
+    }
     pulse(pulse_signal_M2);
+  }
+  else{
+    counter = 0;
   }
   
 }
@@ -75,6 +97,18 @@ void pulse(int pin){
   digitalWrite(pin, HIGH);
   delay(len);
   digitalWrite(pin, LOW);
+}
+
+void setdirection(int output, int value){
+  delayMicroseconds(20);
+  if(output == 0){
+    if(value == 1) digitalWrite(direction_signal_M1, HIGH);
+    if(value == 0) digitalWrite(direction_signal_M1, LOW);
+  }
+  if(output == 1){
+    if(value == 1) digitalWrite(direction_signal_M2, HIGH);
+    if(value == 0) digitalWrite(direction_signal_M2, LOW);
+  }
 }
 
 void solarzenithelevation(double year, double month, double day, double hour, double minute, double Tgmt){
