@@ -1,16 +1,22 @@
-#define direction_signal_M1 2
-#define pulse_signal_M1 3
+#include <Wire.h>
+#include <SparkFun_RV8803.h>
 
-#define direction_signal_M2 5
-#define pulse_signal_M2 4
+RV8803 rtc;
 
-#define M1_right 6
-#define M1_left 8
+#define direction_signal_M1 3
+#define pulse_signal_M1 2
 
-#define M2_up 9
-#define M2_down 7
+#define direction_signal_M2 7
+#define pulse_signal_M2 8
 
-#define len 25
+#define M1_right 9
+#define M1_left 12
+
+#define M2_up 11
+#define M2_down 10
+
+#define len1 15
+#define len2 1
 
 double elevation = 0.0;
 double azimuth = 0.0;
@@ -24,7 +30,24 @@ int down = 0;
 
 int counter = 0;
 
+
 void setup() {
+
+  Wire.begin();
+  Serial.begin(9600);
+
+  if(rtc.begin() == false)
+  {
+    Serial.println("Something went wrong, check wiring");
+    while(1);
+  }
+  
+  Serial.println("RTC online!");
+  
+  if(rtc.is12Hour() == true)
+  {
+    rtc.set24Hour();
+  }
   
   pinMode(direction_signal_M1, OUTPUT);
   pinMode(pulse_signal_M1, OUTPUT);
@@ -39,6 +62,25 @@ void setup() {
 }
 
 void loop() {
+  unsigned int second = 0;
+  unsigned int minute = 0;
+  unsigned int hour = 0;
+  unsigned int day = 0;
+  unsigned int month = 0;
+  unsigned int year = 0;
+  
+//  Wire.beginTransmission();
+
+  if(rtc.updateTime() == true)
+  {
+    second = rtc.getSeconds();
+    minute = rtc.getMinutes();
+    hour = rtc.getHours();
+    day = rtc.getDate();
+    month = rtc.getMonth();
+    year = rtc.getYear();
+    
+  }
   
   right = digitalRead(M1_right);
   left = digitalRead(M1_left);
@@ -50,7 +92,7 @@ void loop() {
       counter = 1;
       setdirection(0,1);
     }
-    pulse(pulse_signal_M1);        
+    pulse(pulse_signal_M1, len1);        
   }
   else{
     counter = 0;
@@ -61,7 +103,7 @@ void loop() {
       counter = 1;
       setdirection(0,0);
     }
-    pulse(pulse_signal_M1);
+    pulse(pulse_signal_M1, len1);
   }
   else{
     counter = 0;
@@ -72,7 +114,7 @@ void loop() {
       counter = 1;
       setdirection(1,1);
     }
-    pulse(pulse_signal_M2);        
+    pulse(pulse_signal_M2, len2);        
   }
   else{
     counter = 0;
@@ -83,7 +125,7 @@ void loop() {
       counter = 1;
       setdirection(1,0);
     }
-    pulse(pulse_signal_M2);
+    pulse(pulse_signal_M2, len2);
   }
   else{
     counter = 0;
@@ -91,7 +133,7 @@ void loop() {
   
 }
 
-void pulse(int pin){
+void pulse(int pin, int len){
   digitalWrite(pin, LOW);
   delay(len);
   digitalWrite(pin, HIGH);
