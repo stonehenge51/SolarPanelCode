@@ -20,15 +20,16 @@ RV8803 rtc;
 
 double elevation = 0.0;
 double azimuth = 0.0;
-int timedata [] = {0,0,0,0,0,0};
-
 int right = 0;
 int left = 0;
-
 int up = 0;
 int down = 0;
-
 int counter = 0;
+
+byte Version[3];
+int8_t x_data;
+int8_t y_data;
+int8_t z_data;
 
 
 void setup() {
@@ -48,6 +49,12 @@ void setup() {
   {
     rtc.set24Hour();
   }
+
+//  rtc.setYear(2022);
+//  rtc.setMonth(3);
+//  rtc.setDate(9);
+//  rtc.setHours(12);
+//  rtc.setMinutes(5);
   
   pinMode(direction_signal_M1, OUTPUT);
   pinMode(pulse_signal_M1, OUTPUT);
@@ -62,12 +69,13 @@ void setup() {
 }
 
 void loop() {
-  unsigned int second = 0;
-  unsigned int minute = 0;
-  unsigned int hour = 0;
-  unsigned int day = 0;
-  unsigned int month = 0;
-  unsigned int year = 0;
+  double second = 0.0;
+  double minute = 0.0;
+  double hour = 0.0;
+  double day = 0.0;
+  double month = 0.0;
+  double year = 0.0;
+  double Tgmt = 0.0;
   
 //  Wire.beginTransmission();
 
@@ -79,8 +87,32 @@ void loop() {
     day = rtc.getDate();
     month = rtc.getMonth();
     year = rtc.getYear();
+    Tgmt = 8 + hour + minute/60 + second/3600;
+
+//    Serial.print("Year =  ");
+//    Serial.println(year);
+//    Serial.print("Month =  ");
+//    Serial.println(month);
+//    Serial.print("Day =  ");
+//    Serial.println(day);
+//    Serial.print("Hour =  ");
+//    Serial.println(hour);
+//    Serial.print("Minute =  ");
+//    Serial.println(minute);
+//    Serial.print("Second =  ");
+//    Serial.println(second);
     
+    solarzenithelevation(year, month, day, hour, minute, Tgmt);
+//    Serial.print("Elevation = ");
+//    Serial.println(elevation);
+//    Serial.print("Azimuth = ");
+//    Serial.println(azimuth);
+    
+    delay(10000);
+//    Serial.println(minute);
   }
+
+  AccelerometerInit(); 
   
   right = digitalRead(M1_right);
   left = digitalRead(M1_left);
@@ -153,14 +185,59 @@ void setdirection(int output, int value){
   }
 }
 
+void AccelerometerInit() 
+{ 
+   Wire.beginTransmission(0x0A); // address of the accelerometer 
+  // reset the accelerometer 
+  Wire.write(0x04); // Y data
+  Wire.endTransmission(); 
+  Wire.requestFrom(0x0A,1);    // request 6 bytes from slave device #2
+  while(Wire.available())    // slave may send less than requested
+  { 
+    Version[0] = Wire.read(); // receive a byte as characte
+  }  
+  x_data=(int8_t)Version[0]>>2;
+ 
+  Wire.beginTransmission(0x0A); // address of the accelerometer 
+  // reset the accelerometer 
+  Wire.write(0x06); // Y data
+  Wire.endTransmission(); 
+  Wire.requestFrom(0x0A,1);    // request 6 bytes from slave device #2
+  while(Wire.available())    // slave may send less than requested
+  { 
+    Version[1] = Wire.read(); // receive a byte as characte
+  }  
+  y_data=(int8_t)Version[1]>>2;
+  
+  Wire.beginTransmission(0x0A); // address of the accelerometer 
+  // reset the accelerometer 
+  Wire.write(0x08); // Y data
+  Wire.endTransmission(); 
+  Wire.requestFrom(0x0A,1);    // request 6 bytes from slave device #2
+   while(Wire.available())    // slave may send less than requested
+  { 
+    Version[2] = Wire.read(); // receive a byte as characte
+  }  
+   z_data=(int8_t)Version[2]>>2; 
+   
+   Serial.print("X=");   
+   Serial.print(x_data);         // print the character
+   Serial.print("  "); 
+   Serial.print("Y=");   
+   Serial.print(y_data);         // print the character
+   Serial.print("  "); 
+   Serial.print("Z=");  
+   Serial.println(z_data);   
+} 
+
 void solarzenithelevation(double year, double month, double day, double hour, double minute, double Tgmt){
   double lambdaO = -123.12722630891494 * PI/180;
   double psiO = 49.17491793381123 * PI/180;
-  double delta = sundeclination(year, month, day, hour+7, minute);
+  double delta = sundeclination(year, month, day, hour+7.0, minute);
   double Emin = equationoftime(year, month, day, hour, minute);
   double psiS = delta;
-  double lambdaS = -15*(Tgmt - 12 + Emin/60) * PI/180;
-  double Sx = cos(psiS)*sin(lambdaS - lambdaO);
+  double lambdaS = -15*(Tgmt - 12 + Emin/60.0) * PI/180.0;
+  double Sx = cos(psiS)* sin(lambdaS - lambdaO);
   double Sy = cos(psiO) * sin(psiS) - sin(psiO) * cos(psiS) * cos(lambdaS - lambdaO);
   double Sz = sin(psiO) * sin(psiS) + cos(psiO) * cos(psiS) * cos(lambdaS - lambdaO);
   double Z = asin(Sz);
@@ -205,7 +282,7 @@ double equationoftime(double year, double month, double day, double hour, double
   double aaa = 367 * year - 730531.5;
   double bbb = -int((7 * int(year + (month + 9)/12))/4);
   double ccc = int(275 * month/9) + day;
-  double Dtoday = (hour + minute/9) + day;
+  double Dtoday = (hour + minute/60 - timezone)/24;
   double Ddays = aaa + bbb + ccc + Dtoday;
   double Cycle = int(Ddays / 365.25);
   double thetarad = 0.0172024 * (Ddays - 365.25 * Cycle);
@@ -226,7 +303,7 @@ double Ncalc(int year, double month, double day, double hour, double minute){
   double daysMonth[] = {31,28,31,30,31,30,31,31,30,31,30,31};
   double days = 0.0;
 
-  for(int i=0; i < month; i++){
+  for(int i=0; i < month-1; i++){
     double num = year % 4;
     if(num != 0){
       days = days + daysMonth[i];

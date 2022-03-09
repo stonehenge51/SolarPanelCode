@@ -75,7 +75,6 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt):
     psiO = 49.17491793381123 * np.pi/180
     delta = sundeclination(year, month, day, hour+7, minute)
     Emin = equationoftime(year, month, day, hour, minute)
-    
     psiS = delta
     lambdaS = -15*(Tgmt - 12 + Emin/60) * np.pi/180
     Sx = np.cos(psiS)*np.sin(lambdaS - lambdaO)
@@ -94,8 +93,9 @@ def solarzenithelevation(year, month, day, hour, minute, Tgmt):
 
 
 year, month, day, hour, minute, second = greenwichmeantime(0)
-print(year," ", month," ", day," ", hour," ", minute," ", second)
+#print(year," ", month," ", day," ", hour," ", minute," ", second)
 Tgmt = greenwichmeantime(1)
+#print(Tgmt)
 
 elevation, azimuth = solarzenithelevation(year, month, day, hour, minute, Tgmt)
 print("The value for Elevation is ", elevation, "\nThe value for Azimuth", azimuth)
