@@ -10,7 +10,10 @@
 #define M2_up 9
 #define M2_down 7
 
-#define len 25
+#define len1 25
+#define len2 1
+
+
 
 double elevation = 0.0;
 double azimuth = 0.0;
@@ -50,7 +53,7 @@ void loop() {
       counter = 1;
       setdirection(0,1);
     }
-    pulse(pulse_signal_M1);        
+    pulse(pulse_signal_M1, len1);        
   }
   else{
     counter = 0;
@@ -61,7 +64,7 @@ void loop() {
       counter = 1;
       setdirection(0,0);
     }
-    pulse(pulse_signal_M1);
+    pulse(pulse_signal_M1, len1);
   }
   else{
     counter = 0;
@@ -72,7 +75,7 @@ void loop() {
       counter = 1;
       setdirection(1,1);
     }
-    pulse(pulse_signal_M2);        
+    pulse(pulse_signal_M2, len2);        
   }
   else{
     counter = 0;
@@ -83,7 +86,7 @@ void loop() {
       counter = 1;
       setdirection(1,0);
     }
-    pulse(pulse_signal_M2);
+    pulse(pulse_signal_M2, len2);
   }
   else{
     counter = 0;
@@ -91,7 +94,7 @@ void loop() {
   
 }
 
-void pulse(int pin){
+void pulse(int pin, int len){
   digitalWrite(pin, LOW);
   delay(len);
   digitalWrite(pin, HIGH);
