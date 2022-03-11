@@ -3,6 +3,7 @@
 
 RV8803 rtc;
 
+#define Manual 4
 #define direction_signal_M1 3
 #define pulse_signal_M1 2
 
@@ -18,18 +19,33 @@ RV8803 rtc;
 #define len1 15
 #define len2 1
 
+const int DigComp_ADDR     = 0x60; // I2C Address of the sensor
+const uint8_t comp1            = 0x02;
+const uint8_t comp2            = 0x03;
+const uint8_t XAXIS1           = 12;
+const uint8_t XAXIS2           = 13;
+const uint8_t YAXIS1           = 14;
+const uint8_t YAXIS2           = 15;
+const uint8_t ZAXIS1           = 16;
+const uint8_t ZAXIS2           = 17;
+const uint8_t Pitch            = 4;
+const uint8_t Roll             = 5;
+
 double elevation = 0.0;
 double azimuth = 0.0;
+int manual = 0;
 int right = 0;
 int left = 0;
 int up = 0;
 int down = 0;
 int counter = 0;
 
-byte Version[3];
-int8_t x_data;
-int8_t y_data;
-int8_t z_data;
+unsigned int compassdirection = 0;
+int x_data;
+int y_data;
+int z_data;
+int8_t pitchAngle = 0;
+int8_t rollAngle = 0;
 
 
 void setup() {
@@ -55,12 +71,13 @@ void setup() {
 //  rtc.setDate(9);
 //  rtc.setHours(12);
 //  rtc.setMinutes(5);
-  
+
   pinMode(direction_signal_M1, OUTPUT);
   pinMode(pulse_signal_M1, OUTPUT);
   pinMode(direction_signal_M2, OUTPUT);
   pinMode(pulse_signal_M2, OUTPUT);
 
+  pinMode(Manual , INPUT);
   pinMode(M1_left, INPUT_PULLUP);
   pinMode(M1_right, INPUT_PULLUP);
   pinMode(M2_up, INPUT_PULLUP);
@@ -76,8 +93,6 @@ void loop() {
   double month = 0.0;
   double year = 0.0;
   double Tgmt = 0.0;
-  
-//  Wire.beginTransmission();
 
   if(rtc.updateTime() == true)
   {
@@ -88,83 +103,107 @@ void loop() {
     month = rtc.getMonth();
     year = rtc.getYear();
     Tgmt = 8 + hour + minute/60 + second/3600;
-
-//    Serial.print("Year =  ");
-//    Serial.println(year);
-//    Serial.print("Month =  ");
-//    Serial.println(month);
-//    Serial.print("Day =  ");
-//    Serial.println(day);
-//    Serial.print("Hour =  ");
-//    Serial.println(hour);
-//    Serial.print("Minute =  ");
-//    Serial.println(minute);
-//    Serial.print("Second =  ");
-//    Serial.println(second);
-    
     solarzenithelevation(year, month, day, hour, minute, Tgmt);
-//    Serial.print("Elevation = ");
-//    Serial.println(elevation);
-//    Serial.print("Azimuth = ");
-//    Serial.println(azimuth);
-    
-    delay(10000);
-//    Serial.println(minute);
-  }
 
-  AccelerometerInit(); 
+    compassdirection = highLowByteRead(comp1, comp2);
+    AccelerometerInit();
+//    Serial.print("Compass Direction = ");
+//    Serial.println(compassdirection);
+    delay(100);
+  }
   
-  right = digitalRead(M1_right);
-  left = digitalRead(M1_left);
-  up = digitalRead(M2_up);
-  down = digitalRead(M2_down);
+   
 
-  if(right == LOW){
-    if(counter == 0){
-      counter = 1;
-      setdirection(0,1);
-    }
-    pulse(pulse_signal_M1, len1);        
-  }
-  else{
-    counter = 0;
-    setdirection(0,0);
-  }
-  if(left == LOW){
-    if(counter == 0){
-      counter = 1;
+  manual = digitalRead(Manual);
+  
+
+  if(manual == LOW){
+    right = digitalRead(M1_right);
+    left = digitalRead(M1_left);
+    up = digitalRead(M2_up);
+    down = digitalRead(M2_down);
+    
+    if(right == LOW)turnRight();
+    else{
+      counter = 0;
       setdirection(0,0);
     }
-    pulse(pulse_signal_M1, len1);
-  }
-  else{
-    counter = 0;
-  }
-
-  if(up == LOW){
-    if(counter == 0){
-      counter = 1;
-      setdirection(1,1);
-    }
-    pulse(pulse_signal_M2, len2);        
-  }
-  else{
-    counter = 0;
-    setdirection(1,0);
-  }
-  if(down == LOW){
-    if(counter == 0){
-      counter = 1;
+    if(left == LOW)turnLeft();
+    else counter = 0;
+  
+    if(up == LOW)increaseElevation();       
+    else{
+      counter = 0;
       setdirection(1,0);
     }
-    pulse(pulse_signal_M2, len2);
+    if(down == LOW)decreaseElevation();
+    else counter = 0;
   }
-  else{
-    counter = 0;
-  }
+  
+  if(manual == HIGH)autoController();
   
 }
 
+void autoController(){
+
+  int elev_diff = 0;
+  elev_diff = elevation - pitchAngle;
+  Serial.print("elev_diff = ");
+  Serial.println(elev_diff);
+  if (pitchAngle < 11){
+    decreaseElevation();
+    Serial.println("Lowering to starting position");
+  }
+  else counter = 0;
+  
+  if (pitchAngle > 10){
+    if (elev_diff > 2){
+      decreaseElevation();
+      Serial.println("Lowering");
+    }
+    else counter = 0;
+  }
+
+  if (pitchAngle < 70){
+    if (elev_diff < -2){
+      increaseElevation();
+      Serial.println("Raising");
+    }
+    else{
+        counter = 0;
+        setdirection(1,0);
+      }
+  }
+}
+
+void turnRight(){
+  if(counter == 0){
+    counter = 1;
+    setdirection(0,1);
+  }
+  pulse(pulse_signal_M1, len1); 
+}
+void turnLeft(){
+  if(counter == 0){
+    counter = 1;
+    setdirection(0,0);
+  }
+  pulse(pulse_signal_M1, len1);
+}
+void increaseElevation(){
+  if(counter == 0){
+    counter = 1;
+    setdirection(1,0);
+  }
+  pulse(pulse_signal_M2, len2);
+}
+void decreaseElevation(){
+  if(counter == 0){
+    counter = 1;
+    setdirection(1,0);
+   }
+   pulse(pulse_signal_M2, len2);
+}
 void pulse(int pin, int len){
   digitalWrite(pin, LOW);
   delay(len);
@@ -186,49 +225,79 @@ void setdirection(int output, int value){
 }
 
 void AccelerometerInit() 
-{ 
-   Wire.beginTransmission(0x0A); // address of the accelerometer 
-  // reset the accelerometer 
-  Wire.write(0x04); // Y data
-  Wire.endTransmission(); 
-  Wire.requestFrom(0x0A,1);    // request 6 bytes from slave device #2
-  while(Wire.available())    // slave may send less than requested
-  { 
-    Version[0] = Wire.read(); // receive a byte as characte
-  }  
-  x_data=(int8_t)Version[0]>>2;
- 
-  Wire.beginTransmission(0x0A); // address of the accelerometer 
-  // reset the accelerometer 
-  Wire.write(0x06); // Y data
-  Wire.endTransmission(); 
-  Wire.requestFrom(0x0A,1);    // request 6 bytes from slave device #2
-  while(Wire.available())    // slave may send less than requested
-  { 
-    Version[1] = Wire.read(); // receive a byte as characte
-  }  
-  y_data=(int8_t)Version[1]>>2;
+{
+//  int Xaxis = 0;
+//  int Yaxis = 0;
+//  int Zaxis = 0;
   
-  Wire.beginTransmission(0x0A); // address of the accelerometer 
+//  Xaxis = highLowByteRead(XAXIS1, XAXIS2);
+//  x_data = Xaxis;
+//  Serial.print("XAXIS = ");
+//  Serial.println(Xaxis);
+
+//  Yaxis = highLowByteRead(YAXIS1, YAXIS2);
+//  y_data = Yaxis;
+//  Serial.print("YAXIS = ");
+//  Serial.println(Yaxis);
+
+//  Zaxis = highLowByteRead(ZAXIS1, ZAXIS2);
+//  z_data = Zaxis;
+//  Serial.print("ZAXIS = ");
+//  Serial.println(Zaxis);
+
+  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
   // reset the accelerometer 
-  Wire.write(0x08); // Y data
+  Wire.write(Pitch); // Y data
   Wire.endTransmission(); 
-  Wire.requestFrom(0x0A,1);    // request 6 bytes from slave device #2
-   while(Wire.available())    // slave may send less than requested
+  Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
+  while(Wire.available())    // slave may send less than requested
   { 
-    Version[2] = Wire.read(); // receive a byte as characte
-  }  
-   z_data=(int8_t)Version[2]>>2; 
-   
-   Serial.print("X=");   
-   Serial.print(x_data);         // print the character
-   Serial.print("  "); 
-   Serial.print("Y=");   
-   Serial.print(y_data);         // print the character
-   Serial.print("  "); 
-   Serial.print("Z=");  
-   Serial.println(z_data);   
+    pitchAngle = Wire.read(); // receive a byte as characte
+  }
+//  Serial.print("pitch = ");
+//  Serial.println(pitchAngle);
+  
+//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
+//  // reset the accelerometer 
+//  Wire.write(Roll); // Y data
+//  Wire.endTransmission(); 
+//  Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
+//  while(Wire.available())    // slave may send less than requested
+//  { 
+//    rollAngle = Wire.read(); // receive a byte as characte
+//  }
+//  Serial.print("roll = ");
+//  Serial.println(rollAngle);
+      
 } 
+int highLowByteRead(uint8_t addresshigh, uint8_t addresslow){
+  byte high = 0;
+  byte low = 0;
+  int value = 0;
+  
+  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
+  // reset the accelerometer 
+  Wire.write(addresshigh); // Y data
+  Wire.endTransmission(); 
+  Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
+  while(Wire.available())    // slave may send less than requested
+  { 
+    high = Wire.read(); // receive a byte as characte
+  }  
+  value = high<<8;
+ 
+  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
+  // reset the accelerometer 
+  Wire.write(addresslow); // Y data
+  Wire.endTransmission(); 
+  Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
+  while(Wire.available())    // slave may send less than requested
+  { 
+    low = Wire.read(); // receive a byte as characte
+  }  
+  value += low;
+  return value; 
+}
 
 void solarzenithelevation(double year, double month, double day, double hour, double minute, double Tgmt){
   double lambdaO = -123.12722630891494 * PI/180;
