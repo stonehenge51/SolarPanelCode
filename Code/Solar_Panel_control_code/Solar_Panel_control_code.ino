@@ -16,32 +16,32 @@ RV8803 rtc;
 #define M2_up 11
 #define M2_down 10
 
+#define Hall 5
+
 #define len1 10
 #define len2 900
 
 const int DigComp_ADDR     = 0x60; // I2C Address of the sensor
 const uint8_t comp1            = 2;
 const uint8_t comp2            = 3;
-const uint8_t XAXIS1           = 12;
-const uint8_t XAXIS2           = 13;
-const uint8_t YAXIS1           = 14;
-const uint8_t YAXIS2           = 15;
-const uint8_t ZAXIS1           = 16;
-const uint8_t ZAXIS2           = 17;
 const uint8_t Pitch            = 4;
 const uint8_t Roll             = 5;
 const uint8_t caliadd          = 30;
 
 double elevation = 0.0;
 double azimuth = 0.0;
+int hallcorec = 0;
 int manual = 0;
 int right = 0;
 int left = 0;
 int up = 0;
 int down = 0;
 int counter = 0;
-bool calibrated = false;
+int steps = 0;
 int cycle_counter = 0;
+float Nratio = 1.7/13.0;
+float correctiondata[] = {0.0,0.0,0.0,0.0,0.0};
+int index = 0;
 
 unsigned int compassdirection = 0;
 int x_data;
@@ -50,10 +50,11 @@ int z_data;
 int8_t pitchAngle = 0;
 int8_t rollAngle = 0;
 
+int half = 0;
 int elev_diff = 0;
 
 float azim_diff = 0;
-float compassdir = 0.0;
+float compassdir = 90.0;
 
 uint8_t calbyte = 0;
 uint8_t calsys = 0;
@@ -82,37 +83,9 @@ void setup() {
     rtc.set24Hour();
   }
 
-//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//  Wire.write(0);
-//  Wire.write(0xF0); // calibration data
-//  Wire.endTransmission();
-//  delayMicroseconds(20);
-//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//  Wire.write(0);
-//  Wire.write(0xF5); // calibration data
-//  Wire.endTransmission(); 
-//  delayMicroseconds(20);
-//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//  Wire.write(0);
-//  Wire.write(0xF6); // calibration data
-//  Wire.endTransmission(); 
-//  delayMicroseconds(20);
+  
 
-//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//  Wire.write(0);
-//  Wire.write(0xE0); // calibration data
-//  Wire.endTransmission();
-//  delayMicroseconds(20);
-//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//  Wire.write(0);
-//  Wire.write(0xE5); // calibration data
-//  Wire.endTransmission(); 
-//  delayMicroseconds(20);
-//  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//  Wire.write(0);
-//  Wire.write(0xE2); // calibration data
-//  Wire.endTransmission(); 
-//  delayMicroseconds(20);
+
 
   pinMode(direction_signal_M1, OUTPUT);
   pinMode(pulse_signal_M1, OUTPUT);
@@ -120,6 +93,7 @@ void setup() {
   pinMode(pulse_signal_M2, OUTPUT);
 
   pinMode(Manual , INPUT);
+  pinMode(Hall , INPUT);
   pinMode(M1_left, INPUT_PULLUP);
   pinMode(M1_right, INPUT_PULLUP);
   pinMode(M2_up, INPUT_PULLUP);
@@ -136,7 +110,7 @@ void loop() {
   double year = 0.0;
   double Tgmt = 0.0;
 
-  if(cycle_counter == 400){
+  if(cycle_counter == 60){
     cycle_counter = 0;
   }
 
@@ -169,21 +143,21 @@ void loop() {
 
   
     if(cycle_counter == 50){
-      Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-      Wire.write(caliadd); // calibration data
-      Wire.endTransmission(); 
-      Wire.requestFrom(DigComp_ADDR,1);    // request 8 bytes from device
-      while(Wire.available())    // slave may send less than requested
-      { 
-        calbyte = Wire.read(); // receive a byte as characte
-      }
-      
-      calsys = calbyte>>6;
-      calgyro = calbyte>>4;
-      calgyro = calgyro&(0x03);
-      calaccel = calbyte>>2;
-      calaccel = calaccel&(0x03);
-      calmagn = calbyte&(0x03);
+//      Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
+//      Wire.write(caliadd); // calibration data
+//      Wire.endTransmission(); 
+//      Wire.requestFrom(DigComp_ADDR,1);    // request 8 bytes from device
+//      while(Wire.available())    // slave may send less than requested
+//      { 
+//        calbyte = Wire.read(); // receive a byte as characte
+//      }
+//      
+//      calsys = calbyte>>6;
+//      calgyro = calbyte>>4;
+//      calgyro = calgyro&(0x03);
+//      calaccel = calbyte>>2;
+//      calaccel = calaccel&(0x03);
+//      calmagn = calbyte&(0x03);
 
       if(rtc.updateTime() == true)
       {
@@ -195,26 +169,20 @@ void loop() {
         year = rtc.getYear();
         Tgmt = 8 + hour + minute/60 + second/3600;
         solarzenithelevation(year, month, day, hour, minute, Tgmt);
-        compassdirection = highLowByteRead(comp1, comp2);
-        AccelerometerInit();
-      Serial.print("System cal = ");
-      Serial.println(calsys);
-      Serial.print("Gyro cal = ");
-      Serial.println(calgyro);
-      Serial.print("Accel cal = ");
-      Serial.println(calaccel);
-      Serial.print("Magn cal = ");
-      Serial.println(calmagn);
-//      Serial.print("Sun Direction = ");
-//      Serial.println(azimuth);
-      Serial.print("Compass Direction = ");
-      Serial.println(compassdirection);
+//        compassdirection = highLowByteRead(comp1, comp2);
+//        AccelerometerInit();
       Serial.print("Elevation = ");
       Serial.println(elevation);
 //      Serial.print("pitchAngle = ");
 //      Serial.println(pitchAngle);
     }
 //    delay(1000);
+  }
+
+  hallcorec = digitalRead(Hall);
+  delay(1);
+  if(hallcorec == HIGH){
+    runcorrection();
   }
   
    
@@ -259,20 +227,18 @@ void autoController(){
     pitchAngle = (pitchAngle - 90) *-1;
     elevation = 90.0;  //maunal elevation
     elev_diff = pitchAngle - elevation;
-    Serial.print("elev_diff = ");
-    Serial.println(elev_diff);
-    Serial.println(pitchAngle);
+//    Serial.print("elev_diff = ");
+//    Serial.println(elev_diff);
+//    Serial.println(pitchAngle);
   }
   if (pitchAngle > 90){
     decreaseElevation();
-//    Serial.println("Lowering to starting position");
   }
   else counter = 0;
   
   if (pitchAngle <= 90){
     if (elev_diff > 2){
       decreaseElevation();
-//      Serial.println("Lowering");
     }
     else counter = 0;
   }
@@ -280,7 +246,6 @@ void autoController(){
   if (pitchAngle > 0){
     if (elev_diff < -2){
       increaseElevation();
-//      Serial.println("Raising");
     }
     else{
         counter = 0;
@@ -288,41 +253,31 @@ void autoController(){
       }
   }
 
-  
-  
+  azim_diff = azimuth - compassdir;
   if(cycle_counter == 50){
-    compassdir = compassdirection;
-    compassdir = compassdir/10.0;
-    azim_diff = azimuth - compassdir;
+    Serial.print("azimuth = ");
+    Serial.println(azimuth);
+    Serial.print("compassdir = ");
+    Serial.println(compassdir);
     Serial.print("azim_diff = ");
     Serial.println(azim_diff);
-    Serial.println(azimuth);
+    Serial.print("half = ");
+    Serial.println(half);
+    Serial.println("-----------------------------");
   }
-
-//  if (azimuth < 90){
-//    decreaseElevation();
-////    Serial.println("Lowering to starting position");
-//  }
-//  else counter = 0;
-//  
-//  if (1 == 1){
-//    if (azim_diff <= -2){
-//      turnLeft();
-////      Serial.println("Turning left");
-//    }
-//    else counter = 0;
-//  }
-//
-//  if (1 == 1){
-//    if (azim_diff > 2){
-//      turnRight();
-////      Serial.println("Turning right");
-//    }
-//    else{
-//        counter = 0;
-//        setdirection(1,0);
-//      }
-//  }
+  if(azim_diff > 5){
+    half = 5;
+    turnRight();
+  }
+  if(azim_diff < -5){
+    half = -5;
+    turnLeft();
+  }
+  else{
+    counter = 0;
+    half = 0.0;
+  }
+  
   
 }
 
@@ -331,7 +286,7 @@ void turnRight(){
     counter = 1;
     setdirection(0,0);
   }
-//  Serial.println("Turning right");
+  compassdir += 1.8 * Nratio;
   pulse(pulse_signal_M1, len1); 
 }
 void turnLeft(){
@@ -339,7 +294,7 @@ void turnLeft(){
     counter = 1;
     setdirection(0,1);
   }
-//  Serial.println("Turning left");
+  compassdir += -1.8 * Nratio;
   pulse(pulse_signal_M1, len1);
 }
 void increaseElevation(){
@@ -383,6 +338,25 @@ void setdirection(int output, int value){
   if(output == 1){
     if(value == 1) digitalWrite(direction_signal_M2, HIGH);
     if(value == 0) digitalWrite(direction_signal_M2, LOW);
+  }
+}
+
+void runcorrection(){
+  float diff = 0.0;
+  Serial.println("Running correction");
+  diff = 180 - compassdir;
+  if(index == 5){
+    index = 0;
+  }
+  if(diff > 5){
+    compassdir = 180.0;
+    correctiondata[index] = diff;
+    index++;
+  }
+  if(diff < -5){
+    compassdir = 180.0;
+    correctiondata[index] = diff;
+    index++;
   }
 }
 
