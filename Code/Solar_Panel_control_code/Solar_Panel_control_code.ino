@@ -14,6 +14,7 @@ RV8803 rtc;
 #define M2_up 11
 #define M2_down 10
 
+
 //this defines the pin which controls whether the code is operating in manual or automated operation
 #define Manual 4
 
@@ -52,6 +53,7 @@ int right = 0;
 int left = 0;
 int up = 0;
 int down = 0;
+<<<<<<< HEAD
 
 int counter = 0; //a time saving counter that blocks additional resetting of the stepper motor direction pin
 int steps = 0; //counts the steps taken by the azimuthal motor
@@ -120,21 +122,21 @@ void setup() {
   pinMode(M2_down , INPUT_PULLUP);
 
   if(rtc.updateTime() == true)
-      {
-        second = rtc.getSeconds();
-        minute = rtc.getMinutes();
-        hour = rtc.getHours();
-        day = rtc.getDate();
-        month = rtc.getMonth();
-        year = rtc.getYear();
-        Tgmt = 8 + hour + minute/60 + second/3600;
-        solarzenithelevation(year, month, day, hour, minute, Tgmt);
-      }
+  {
+    second = rtc.getSeconds();
+    minute = rtc.getMinutes();
+    hour = rtc.getHours();
+    day = rtc.getDate();
+    month = rtc.getMonth();
+    year = rtc.getYear();
+    Tgmt = 8 + hour + minute/60 + second/3600;
+    solarzenithelevation(year, month, day, hour, minute, Tgmt);
+  }
 
 }
 
 void loop() {
-//  while(startup == true)calibration();
+  while(startup == true)calibration();
   
   if(cycle_counter == 51){
     cycle_counter = 0;
@@ -153,6 +155,7 @@ void loop() {
       
       solarzenithelevation(year, month, day, hour, minute, Tgmt);
 //        compassdirection = highLowByteRead(comp1, comp2);
+<<<<<<< HEAD
       AccelerometerInit();
 //        Serial.print("compassdirection = ");
 //        Serial.println(compassdirection);
@@ -212,10 +215,6 @@ void loop() {
 }
 
 void calibration(){
-  //add hall sensor calibration code
-  if(0 > -1){
-    Serial.println("Yes");    
-  }
   hall90 = digitalRead(Hall90);
   delay(1);
   hall180 = digitalRead(Hall180);
