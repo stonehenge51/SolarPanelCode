@@ -110,7 +110,7 @@ void loop() {
   double year = 0.0;
   double Tgmt = 0.0;
 
-  if(cycle_counter == 60){
+  if(cycle_counter == 400){
     cycle_counter = 0;
   }
 
@@ -170,9 +170,9 @@ void loop() {
         Tgmt = 8 + hour + minute/60 + second/3600;
         solarzenithelevation(year, month, day, hour, minute, Tgmt);
 //        compassdirection = highLowByteRead(comp1, comp2);
-//        AccelerometerInit();
-      Serial.print("Elevation = ");
-      Serial.println(elevation);
+        AccelerometerInit();
+//      Serial.print("Elevation = ");
+//      Serial.println(elevation);
 //      Serial.print("pitchAngle = ");
 //      Serial.println(pitchAngle);
     }
@@ -225,11 +225,11 @@ void autoController(){
 
   if(cycle_counter == 50){
     pitchAngle = (pitchAngle - 90) *-1;
-    elevation = 90.0;  //maunal elevation
+//    elevation = 90.0;  //maunal elevation
     elev_diff = pitchAngle - elevation;
-//    Serial.print("elev_diff = ");
-//    Serial.println(elev_diff);
-//    Serial.println(pitchAngle);
+    Serial.print("elev_diff = ");
+    Serial.println(elev_diff);
+    Serial.println(pitchAngle);
   }
   if (pitchAngle > 90){
     decreaseElevation();
