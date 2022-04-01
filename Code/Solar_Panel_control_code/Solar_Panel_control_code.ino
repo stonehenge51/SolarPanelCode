@@ -1,49 +1,69 @@
 #include <Wire.h>
 #include <SparkFun_RV8803.h>
-
 RV8803 rtc;
 
-#define Manual 4
+//these define which pins control the stepper motors direction and pulse inputs
 #define direction_signal_M1 3
 #define pulse_signal_M1 2
-
 #define direction_signal_M2 7
 #define pulse_signal_M2 8
 
+//these define the pins used for the manual operation buttons for controlling the stepper motors
 #define M1_right 9
 #define M1_left 12
-
 #define M2_up 11
 #define M2_down 10
 
-#define Hall 5
+//this defines the pin which controls whether the code is operating in manual or automated operation
+#define Manual 4
 
-#define len1 50
-#define len1a 15
-#define len2 900
+//these define the pins used for the calibration hall sensors
+#define Hall90 5
+#define Hall180 6
 
-const int DigComp_ADDR     = 0x60; // I2C Address of the sensor
-const uint8_t comp1            = 2;
-const uint8_t comp2            = 3;
-const uint8_t Pitch            = 4;
-const uint8_t Roll             = 5;
-const uint8_t caliadd          = 30;
+//these define the length of delay between each pulse to the stepper motor(minimum value of 5 micro seconds 
+#define len1 40 //mili seconds
+#define len1a 15 //mili seconds
+#define len2 900 //micro seconds
 
-double elevation = 0.0;
+//global variables for storing the time data from the RTC(RV8803)
+double second = 0.0;
+double minute = 0.0;
+double hour = 0.0;
+double day = 0.0;
+double month = 0.0;
+double year = 0.0;
+double Tgmt = 0.0; //this is calculated from the current RTC time
+
+const int DigComp_ADDR     = 0x60; //I2C Address of the digital compass sensor
+const uint8_t comp1            = 2; //high byte address for compass direction (unsigned 16 bit integer) 
+const uint8_t comp2            = 3; //low  byte address for compass direction (unsigned 16 bit integer) 
+const uint8_t Pitch            = 4; //pitch angle address for digital compass (signed 8 bit integer)
+const uint8_t Roll             = 5; //roll angle address for digital compass (signed 8 bit integer)
+const uint8_t caliadd          = 30; //sensor calibration address for digital compass (4 - unsigned 2 bit integers)
+
+//the global variables for storing the azimuthal and elevation angles calculated for RTC time data
+double elevation = 0.0; 
 double azimuth = 0.0;
-int hallcorec = 0;
+
+//the global variables for storing DIO pins HIGH or LOW status
 int manual = 0;
 int right = 0;
 int left = 0;
 int up = 0;
 int down = 0;
-int counter = 0;
-int steps = 0;
-int cycle_counter = 0;
-float Nratio = 1.7/(13.0)*1.25;
-float correctiondata[] = {0.0,0.0,0.0,0.0,0.0};
+
+int counter = 0; //a time saving counter that blocks additional resetting of the stepper motor direction pin
+int steps = 0; //counts the steps taken by the azimuthal motor
+int cycle_counter = 0; //for slowing the cycle rate of non essential functions/code executions
+float Nratio = 1.7/(13.0)*1.45;
+
+float correctiondata[] = {0.0, 0.0, 0.0, 0.0, 0.0};
 int index = 0;
+
 bool startup = true;
+int hall90 = 0;
+int hall180 = 0;
 
 unsigned int compassdirection = 0;
 int x_data;
@@ -55,7 +75,8 @@ int8_t rollAngle = 0;
 int half = 0;
 int elev_diff = 0;
 
-float azim_diff = 0;
+float azim_diff = 0.0;
+float azimutherror = 0.0;
 float compassdir = 90.0;
 
 uint8_t calbyte = 0;
@@ -85,59 +106,20 @@ void setup() {
     rtc.set24Hour();
   }
 
-  
-
-
-
   pinMode(direction_signal_M1, OUTPUT);
   pinMode(pulse_signal_M1, OUTPUT);
   pinMode(direction_signal_M2, OUTPUT);
   pinMode(pulse_signal_M2, OUTPUT);
 
   pinMode(Manual , INPUT);
-  pinMode(Hall , INPUT);
+  pinMode(Hall90 , INPUT);
+  pinMode(Hall180 , INPUT);
   pinMode(M1_left, INPUT_PULLUP);
   pinMode(M1_right, INPUT_PULLUP);
   pinMode(M2_up, INPUT_PULLUP);
   pinMode(M2_down , INPUT_PULLUP);
 
-}
-
-void loop() {
-
-  if(startup == true)calibration();
-  double second = 0.0;
-  double minute = 0.0;
-  double hour = 0.0;
-  double day = 0.0;
-  double month = 0.0;
-  double year = 0.0;
-  double Tgmt = 0.0;
-
-  if(cycle_counter == 500){
-    cycle_counter = 0;
-  }
-
-    if(cycle_counter == 50){
-      manual = digitalRead(Manual);
-      delay(10);
-//      Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//      Wire.write(caliadd); // calibration data
-//      Wire.endTransmission(); 
-//      Wire.requestFrom(DigComp_ADDR,1);    // request 8 bytes from device
-//      while(Wire.available())    // slave may send less than requested
-//      { 
-//        calbyte = Wire.read(); // receive a byte as characte
-//      }
-//      
-//      calsys = calbyte>>6;
-//      calgyro = calbyte>>4;
-//      calgyro = calgyro&(0x03);
-//      calaccel = calbyte>>2;
-//      calaccel = calaccel&(0x03);
-//      calmagn = calbyte&(0x03);
-
-      if(rtc.updateTime() == true)
+  if(rtc.updateTime() == true)
       {
         second = rtc.getSeconds();
         minute = rtc.getMinutes();
@@ -147,20 +129,57 @@ void loop() {
         year = rtc.getYear();
         Tgmt = 8 + hour + minute/60 + second/3600;
         solarzenithelevation(year, month, day, hour, minute, Tgmt);
+      }
+
+}
+
+void loop() {
+//  while(startup == true)calibration();
+  
+  if(cycle_counter == 51){
+    cycle_counter = 0;
+  }
+
+  if(cycle_counter == 50){
+    if(rtc.updateTime() == true)
+    {
+      second = rtc.getSeconds();
+      minute = rtc.getMinutes();
+      hour = rtc.getHours();
+      day = rtc.getDate();
+      month = rtc.getMonth();
+      year = rtc.getYear();
+      Tgmt = 8 + hour + minute/60 + second/3600;
+      
+      solarzenithelevation(year, month, day, hour, minute, Tgmt);
 //        compassdirection = highLowByteRead(comp1, comp2);
-        AccelerometerInit();
-        Serial.print("compassdir = ");
-        Serial.println(compassdir);
+      AccelerometerInit();
+//        Serial.print("compassdirection = ");
+//        Serial.println(compassdirection);
+      Serial.print("compassdir = ");
+      Serial.println(compassdir);
     }
   }
 
-  hallcorec = digitalRead(Hall);
+  manual = digitalRead(Manual);
   delay(1);
-  if(hallcorec == HIGH){
-    runcorrection();
+  hall90 = digitalRead(Hall90);
+  delay(1);
+  hall180 = digitalRead(Hall180);
+  delay(1);
+  
+  if(hall90 == HIGH){
+    if(cycle_counter == 50)Serial.println("90");
+    azimutherror = 95 - compassdir;
+    correctiondata[index] = azimutherror;    
   }
   
-
+  if(hall180 == HIGH){
+    if(cycle_counter == 50)Serial.println("180");
+    azimutherror = 182 - compassdir;
+    correctiondata[index] = azimutherror;
+  }
+  
   if(manual == LOW){
     right = digitalRead(M1_right);
     delay(1);
@@ -194,13 +213,33 @@ void loop() {
 
 void calibration(){
   //add hall sensor calibration code
+  if(0 > -1){
+    Serial.println("Yes");    
+  }
+  hall90 = digitalRead(Hall90);
+  delay(1);
+  hall180 = digitalRead(Hall180);
+  delay(1);
+
+  if(hall90 == HIGH){
+    if(cycle_counter == 50)Serial.println("90 Startup complete");
+    compassdir = 95;
+    startup = false;
+  }
+  
+  if(hall180 == HIGH){
+    if(cycle_counter == 50)Serial.println("180 Startup complete");
+    compassdir = 182;
+    startup = false;
+  }
+  turnLeft(len1);
 }
 
 void autoController(){
 
   if(cycle_counter == 50){
     pitchAngle = (pitchAngle - 90) *-1;
-    elevation = 90.0;  //maunal elevation
+//    elevation = 90.0;  //maunal elevation
     elev_diff = pitchAngle - elevation;
   }
   if (pitchAngle > 90){
@@ -226,7 +265,7 @@ void autoController(){
   }
   
 //  azimuth = 180.0;
-  azim_diff = azimuth - compassdir;
+  azim_diff = (azimuth + 9) - compassdir;
   if(cycle_counter == 50){
     Serial.print("azimuth = ");
     Serial.println(azimuth);
@@ -275,7 +314,7 @@ void turnLeft(int len){
 void increaseElevation(int len){
   if(counter == 0){
     counter = 1;
-    setdirection(1,1);
+    setdirection(1,0);
   }
 //  Serial.println("Raising");
   micropulse(pulse_signal_M2, len);
@@ -283,7 +322,7 @@ void increaseElevation(int len){
 void decreaseElevation(int len){
   if(counter == 0){
     counter = 1;
-    setdirection(1,0);
+    setdirection(1,1);
    }
 //   Serial.println("Lowering");
    micropulse(pulse_signal_M2, len);
@@ -318,9 +357,20 @@ void setdirection(int output, int value){
 
 void runcorrection(){
   float diff = 0.0;
-  Serial.println("Running correction");
+  Serial.println("Running correction :");
   diff = 180 - compassdir;
-  if(index == 5){
+  if(index == 4){
+    int i = 0; 
+    float value = 0.0;
+    Serial.println("===========================================");
+    Serial.print("Correction data output = ");
+    for(int i = 0; i <= 4; i++){
+      value = correctiondata[i];
+      Serial.print(value);
+      if(i != 4)Serial.print(", ");
+      if(i == 4)Serial.println();
+    }
+    Serial.println("===========================================");
     index = 0;
   }
   if(diff > 5){
@@ -337,18 +387,25 @@ void runcorrection(){
 
 void AccelerometerInit() 
 {
+  unsigned long starttime = millis();
+  unsigned long endtime = starttime + 100;
+  unsigned long currenttime = 0;
   Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-  // reset the accelerometer 
   Wire.write(Pitch); // Y data
   Wire.endTransmission(); 
   Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
   while(Wire.available())    // slave may send less than requested
-  { 
+  {
+    currenttime = millis();
+    if(0 > (endtime - currenttime)){
+      break;
+    }
     pitchAngle = Wire.read(); // receive a byte as characte
   }
-//  Serial.print("pitch = ");
-//  Serial.println(pitchAngle);
   
+  starttime = millis();
+  endtime = starttime + 100;
+  currenttime = 0;
   Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
   // reset the accelerometer 
   Wire.write(Roll); // Y data
@@ -356,16 +413,47 @@ void AccelerometerInit()
   Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
   while(Wire.available())    // slave may send less than requested
   { 
+    currenttime = millis();
+    if(0 > (endtime - currenttime)){
+      break;
+    }
     rollAngle = Wire.read(); // receive a byte as characte
-  }
-//  Serial.print("roll = ");
-//  Serial.println(rollAngle);
-      
+  }      
 } 
+
+void readDigitalCompassCalibrationData(){
+  unsigned long starttime = millis();
+  unsigned long endtime = starttime + 100;
+  unsigned long currenttime = 0;
+  Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
+  Wire.write(caliadd); // calibration data
+  Wire.endTransmission(); 
+  Wire.requestFrom(DigComp_ADDR,1);    // request 8 bytes from device
+  while(Wire.available())    // slave may send less than requested
+  { 
+    currenttime = millis();
+    if(0 > (endtime - currenttime)){
+      break;
+    }
+    calbyte = Wire.read(); // receive a byte as characte
+  }
+  
+  calsys = calbyte>>6;
+  calgyro = calbyte>>4;
+  calgyro = calgyro&(0x03);
+  calaccel = calbyte>>2;
+  calaccel = calaccel&(0x03);
+  calmagn = calbyte&(0x03);  
+}
+
 unsigned int highLowByteRead(uint8_t addresshigh, uint8_t addresslow){
   byte high = 0;
   byte low = 0;
   unsigned int value = 0;
+  unsigned long starttime = millis();
+  unsigned long endtime = starttime + 100;
+  unsigned long currenttime = 0;
+  bool problem = false;
   
   Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
   // reset the accelerometer 
@@ -374,10 +462,19 @@ unsigned int highLowByteRead(uint8_t addresshigh, uint8_t addresslow){
   Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
   while(Wire.available())    // slave may send less than requested
   { 
+    currenttime = millis();
+    if(0 > (endtime - currenttime)){
+      problem = true;
+      break;
+    }
     high = Wire.read(); // receive a byte as characte
   }  
+  if(problem = true)return;
   value = high<<8;
- 
+
+  starttime = millis();
+  endtime = starttime + 100;
+  currenttime = 0;
   Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
   // reset the accelerometer 
   Wire.write(addresslow); // Y data
@@ -385,6 +482,11 @@ unsigned int highLowByteRead(uint8_t addresshigh, uint8_t addresslow){
   Wire.requestFrom(DigComp_ADDR,1);    // request 6 bytes from slave device #2
   while(Wire.available())    // slave may send less than requested
   { 
+    currenttime = millis();
+    if(0 > (endtime - currenttime)){
+      problem = true;
+      break;
+    }
     low = Wire.read(); // receive a byte as characte
   }  
   value += low;
