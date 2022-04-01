@@ -16,10 +16,20 @@ RV8803 rtc;
 #define M2_up 11
 #define M2_down 10
 
-#define Hall 5
+#define Hall90 5
+#define Hall180 6
 
-#define len1 10
+#define len1 40
+#define len1a 15
 #define len2 900
+
+double second = 0.0;
+double minute = 0.0;
+double hour = 0.0;
+double day = 0.0;
+double month = 0.0;
+double year = 0.0;
+double Tgmt = 0.0;
 
 const int DigComp_ADDR     = 0x60; // I2C Address of the sensor
 const uint8_t comp1            = 2;
@@ -39,9 +49,12 @@ int down = 0;
 int counter = 0;
 int steps = 0;
 int cycle_counter = 0;
-float Nratio = 1.7/13.0;
+float Nratio = 1.7/(13.0)*1.45;
 float correctiondata[] = {0.0,0.0,0.0,0.0,0.0};
 int index = 0;
+bool startup = true;
+int hall90 = 0;
+int hall180 = 0;
 
 unsigned int compassdirection = 0;
 int x_data;
@@ -53,7 +66,8 @@ int8_t rollAngle = 0;
 int half = 0;
 int elev_diff = 0;
 
-float azim_diff = 0;
+float azim_diff = 0.0;
+float azimutherror = 0.0;
 float compassdir = 90.0;
 
 uint8_t calbyte = 0;
@@ -67,7 +81,7 @@ uint8_t calmagn = 0;
 void setup() {
 
   Wire.begin();
-  Serial.begin(9600);
+  Serial.begin(57600);
   Serial.flush();
 
   if(rtc.begin() == false)
@@ -93,56 +107,38 @@ void setup() {
   pinMode(pulse_signal_M2, OUTPUT);
 
   pinMode(Manual , INPUT);
-  pinMode(Hall , INPUT);
+  pinMode(Hall90 , INPUT);
+  pinMode(Hall180 , INPUT);
   pinMode(M1_left, INPUT_PULLUP);
   pinMode(M1_right, INPUT_PULLUP);
   pinMode(M2_up, INPUT_PULLUP);
   pinMode(M2_down , INPUT_PULLUP);
 
+  if(rtc.updateTime() == true)
+      {
+        second = rtc.getSeconds();
+        minute = rtc.getMinutes();
+        hour = rtc.getHours();
+        day = rtc.getDate();
+        month = rtc.getMonth();
+        year = rtc.getYear();
+        Tgmt = 8 + hour + minute/60 + second/3600;
+        solarzenithelevation(year, month, day, hour, minute, Tgmt);
+      }
+
 }
 
 void loop() {
-  double second = 0.0;
-  double minute = 0.0;
-  double hour = 0.0;
-  double day = 0.0;
-  double month = 0.0;
-  double year = 0.0;
-  double Tgmt = 0.0;
 
-  if(cycle_counter == 400){
+
+  while(startup == true)calibration();
+  if(cycle_counter == 500){
     cycle_counter = 0;
   }
 
-
-
-
-//  if(calsys == 0){
-//    calibrated = false;
-//  }
-//
-
-//  delay(2000);
-//
-//  if(calsys == 3){
-//    Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//    Wire.write(0xF0); // calibration data
-//    Wire.endTransmission();
-//    delayMicroseconds(20);
-//    Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//    Wire.write(0xF5); // calibration data
-//    Wire.endTransmission(); 
-//    delayMicroseconds(20);
-//    Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
-//    Wire.write(0xF6); // calibration data
-//    Wire.endTransmission(); 
-//    delayMicroseconds(20);
-//    calibrated = true;
-//    
-//  }
-
-  
     if(cycle_counter == 50){
+      manual = digitalRead(Manual);
+      delay(10);
 //      Wire.beginTransmission(DigComp_ADDR); // address of the accelerometer 
 //      Wire.write(caliadd); // calibration data
 //      Wire.endTransmission(); 
@@ -171,25 +167,31 @@ void loop() {
         solarzenithelevation(year, month, day, hour, minute, Tgmt);
 //        compassdirection = highLowByteRead(comp1, comp2);
         AccelerometerInit();
-//      Serial.print("Elevation = ");
-//      Serial.println(elevation);
-//      Serial.print("pitchAngle = ");
-//      Serial.println(pitchAngle);
+
+//        Serial.print("compassdirection = ");
+//        Serial.println(compassdirection);
+        Serial.print("compassdir = ");
+        Serial.println(compassdir);
     }
-//    delay(1000);
   }
 
-  hallcorec = digitalRead(Hall);
+  hall90 = digitalRead(Hall90);
   delay(1);
-  if(hallcorec == HIGH){
-    runcorrection();
+  hall180 = digitalRead(Hall180);
+  delay(1);
+  
+  if(hall90 == HIGH){
+    if(cycle_counter == 50)Serial.println("90");
+    azimutherror = 95 - compassdir;
+    correctiondata[index] = azimutherror;    
   }
   
-   
-  manual = digitalRead(Manual);
-  delay(1);
+  if(hall180 == HIGH){
+    if(cycle_counter == 50)Serial.println("180");
+    azimutherror = 182 - compassdir;
+    correctiondata[index] = azimutherror;
+  }
   
-
   if(manual == LOW){
     right = digitalRead(M1_right);
     delay(1);
@@ -200,25 +202,46 @@ void loop() {
     down = digitalRead(M2_down);
     delay(1);
     
-    if(right == LOW)turnRight();
+    if(right == LOW)turnRight(len1a);
     else{
       counter = 0;
       setdirection(0,0);
     }
-    if(left == LOW)turnLeft();
+    if(left == LOW)turnLeft(len1a);
     else counter = 0;
   
-    if(up == LOW)increaseElevation();       
+    if(up == LOW)increaseElevation(len2);       
     else{
       counter = 0;
       setdirection(1,0);
     }
-    if(down == LOW)decreaseElevation();
+    if(down == LOW)decreaseElevation(len2);
     else counter = 0;
   }
 
   if(manual == HIGH)autoController();
   cycle_counter += 1;
+}
+
+void calibration(){
+  //add hall sensor calibration code
+  hall90 = digitalRead(Hall90);
+  delay(1);
+  hall180 = digitalRead(Hall180);
+  delay(1);
+
+  if(hall90 == HIGH){
+    if(cycle_counter == 50)Serial.println("90 Startup complete");
+    compassdir = 95;
+    startup = false;
+  }
+  
+  if(hall180 == HIGH){
+    if(cycle_counter == 50)Serial.println("180 Startup complete");
+    compassdir = 182;
+    startup = false;
+  }
+  turnLeft(len1);
 }
 
 void autoController(){
@@ -227,51 +250,52 @@ void autoController(){
     pitchAngle = (pitchAngle - 90) *-1;
 //    elevation = 90.0;  //maunal elevation
     elev_diff = pitchAngle - elevation;
-    Serial.print("elev_diff = ");
-    Serial.println(elev_diff);
-    Serial.println(pitchAngle);
+
   }
   if (pitchAngle > 90){
-    decreaseElevation();
+    decreaseElevation(len2);
   }
   else counter = 0;
   
   if (pitchAngle <= 90){
     if (elev_diff > 2){
-      decreaseElevation();
+      decreaseElevation(len2);
     }
     else counter = 0;
   }
 
   if (pitchAngle > 0){
     if (elev_diff < -2){
-      increaseElevation();
+      increaseElevation(len2);
     }
     else{
         counter = 0;
         setdirection(1,0);
       }
   }
-
-  azim_diff = azimuth - compassdir;
+  
+//  azimuth = 180.0;
+  azim_diff = (azimuth + 9) - compassdir;
   if(cycle_counter == 50){
     Serial.print("azimuth = ");
     Serial.println(azimuth);
-    Serial.print("compassdir = ");
-    Serial.println(compassdir);
     Serial.print("azim_diff = ");
     Serial.println(azim_diff);
-    Serial.print("half = ");
-    Serial.println(half);
+    Serial.print("Elevation = ");
+    Serial.println(elevation);
+    Serial.print("elev_diff = ");
+    Serial.println(elev_diff);
+    Serial.print("pitchangle = ");
+    Serial.println(pitchAngle);
     Serial.println("-----------------------------");
   }
   if(azim_diff > 5){
     half = 5;
-    turnRight();
+    turnRight(len1);
   }
   if(azim_diff < -5){
     half = -5;
-    turnLeft();
+    turnLeft(len1);
   }
   else{
     counter = 0;
@@ -281,37 +305,37 @@ void autoController(){
   
 }
 
-void turnRight(){
+void turnRight(int len){
   if(counter == 0){
     counter = 1;
     setdirection(0,0);
   }
-  compassdir += 1.8 * Nratio;
-  pulse(pulse_signal_M1, len1); 
+  compassdir += 360.0/400.0 * Nratio;
+  pulse(pulse_signal_M1, len); 
 }
-void turnLeft(){
+void turnLeft(int len){
   if(counter == 0){
     counter = 1;
     setdirection(0,1);
   }
-  compassdir += -1.8 * Nratio;
-  pulse(pulse_signal_M1, len1);
+  compassdir += -360.0/400.0 * Nratio;
+  pulse(pulse_signal_M1, len);
 }
-void increaseElevation(){
-  if(counter == 0){
-    counter = 1;
-    setdirection(1,1);
-  }
-//  Serial.println("Raising");
-  micropulse(pulse_signal_M2, len2);
-}
-void decreaseElevation(){
+void increaseElevation(int len){
   if(counter == 0){
     counter = 1;
     setdirection(1,0);
+  }
+//  Serial.println("Raising");
+  micropulse(pulse_signal_M2, len);
+}
+void decreaseElevation(int len){
+  if(counter == 0){
+    counter = 1;
+    setdirection(1,1);
    }
 //   Serial.println("Lowering");
-   micropulse(pulse_signal_M2, len2);
+   micropulse(pulse_signal_M2, len);
 }
 void pulse(int pin, int len){
   digitalWrite(pin, LOW);
