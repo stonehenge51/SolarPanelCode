@@ -215,18 +215,17 @@ void updateTimePositionData(){
     solarzenithelevation(year, month, day, hour, minute, Tgmt);
 //    compassdirection = highLowByteRead(comp1, comp2);
     digitalCompassDataRequest();
-    pitchAngle = (pitchAngle - 90) *-1; //switches the sensor pitch angle into correct elevation angle
-//    elevation = 90.0; //maunal setting of the auto elevation angle
-    elev_diff = pitchAngle - elevation;
-//    azimuth = 180.0; //maunal setting of the auto azimuthal angle
-    azim_diff = (azimuth) - compassdir;
   }
 }
 
 //this is the solar panel auto controller that will normally control the solar panel position
 void autoController(){
-  if(rtc.updateTime() == true)updateTimePositionData(); //update time data if the RTC has updated its time registers
-  
+  updateTimePositionData(); //update time data if the RTC has updated its time registers
+  pitchAngle = (pitchAngle - 90) *-1; //switches the sensor pitch angle into correct elevation angle
+//    elevation = 90.0; //maunal setting of the auto elevation angle
+  elev_diff = pitchAngle - elevation;
+//    azimuth = 180.0; //maunal setting of the auto azimuthal angle
+  azim_diff = (azimuth) - compassdir;
 
   if (pitchAngle > 90)decreaseElevation(len2); //if solar panel elevation is over 90 degrees
   else counter = 0; //resets the set direction cycle blocker
@@ -242,19 +241,22 @@ void autoController(){
   
   if(cycle_counter == 50)printInfo();
   
-  if(90 < compassdir && compassdir < 300){
-    if(azim_diff > 1)turnRight(len1);
-    if(azim_diff < -1)turnLeft(len1);
+//  if(90 < compassdir && compassdir < 300){
+    delay(1);
+    if(azim_diff > 5)turnRight(len1);
+    if(azim_diff < -5)turnLeft(len1);
     else counter = 0; //resets the set direction cycle blocker
-  }
-  if(90 < compassdir)turnRight(len1); //if solar panel azimuthal angle is too low
-  if(compassdir < 300)turnLeft(len1); //if solar panel azimuthal angle is too high
+//  }
+//  if(90 > compassdir)turnRight(len1); //if solar panel azimuthal angle is too low
+//  if(compassdir > 300)turnLeft(len1); //if solar panel azimuthal angle is too high
 }
 
 //prints out relevant info
 void printInfo(){
   Serial.print("Solar Elevation = ");
   Serial.println(elevation);
+  Serial.print("Compassdir = ");
+  Serial.println(compassdir);
   Serial.print("Solar Azimuth = ");
   Serial.println(azimuth);
   Serial.print("Elevation_difference = ");
@@ -265,11 +267,12 @@ void printInfo(){
 }
 
 void turnRight(int len){
+  float addition = + 360.0/400.0 * Nratio;
   if(counter == 0){
     counter = 1; //locks the set direction cycle blocker
     setdirection(0,0);
   }
-  compassdir += 360.0/400.0 * Nratio;
+  compassdir = compassdir + 360.0/400.0 * Nratio;
   pulse(pulse_signal_M1, len); //pulse the stepper motor
 }
 void turnLeft(int len){
@@ -277,7 +280,7 @@ void turnLeft(int len){
     counter = 1; //locks the set direction cycle blocker
     setdirection(0,1);
   }
-  compassdir += -360.0/400.0 * Nratio;
+  compassdir = compassdir + -360.0/400.0 * Nratio;
   pulse(pulse_signal_M1, len); //pulse the stepper motor
 }
 void increaseElevation(int len){
@@ -312,6 +315,7 @@ void micropulse(int pin, int len){
 
 //sets the stepper motor direction of rotation
 void setdirection(int output, int value){
+  delayMicroseconds(20); //allows stepper motor controller to register direction
   if(output == 0){ //for azimuthal motor
     if(value == 1) digitalWrite(direction_signal_M1, HIGH);
     if(value == 0) digitalWrite(direction_signal_M1, LOW);
