@@ -53,7 +53,6 @@ int right = 0;
 int left = 0;
 int up = 0;
 int down = 0;
-<<<<<<< HEAD
 
 int counter = 0; //a time saving counter that blocks additional resetting of the stepper motor direction pin
 int steps = 0; //counts the steps taken by the azimuthal motor
@@ -155,7 +154,6 @@ void loop() {
       
       solarzenithelevation(year, month, day, hour, minute, Tgmt);
 //        compassdirection = highLowByteRead(comp1, comp2);
-<<<<<<< HEAD
       AccelerometerInit();
 //        Serial.print("compassdirection = ");
 //        Serial.println(compassdirection);
@@ -264,7 +262,7 @@ void autoController(){
   }
   
 //  azimuth = 180.0;
-  azim_diff = (azimuth + 9) - compassdir;
+  azim_diff = (azimuth) - compassdir;
   if(cycle_counter == 50){
     Serial.print("azimuth = ");
     Serial.println(azimuth);
